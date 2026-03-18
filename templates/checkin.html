@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCEND // DAILY CHECK-IN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="checkin-wrapper">
+
+    <!-- HEADER -->
+    <div class="checkin-header">
+        <a href="/" class="back">← ASCEND</a>
+        <h2 class="checkin-title">DAILY CHECK-IN // SHADOW</h2>
+        <p class="checkin-sub">Be honest. No one is watching except you.</p>
+    </div>
+
+    <!-- PROGRESS BAR -->
+    <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <div class="progress-label">
+        <span id="progress-text">PILLAR 1 OF 6</span>
+        <span id="progress-letter">A — AWARENESS</span>
+    </div>
+
+    <!-- PILLAR STEPS -->
+    <div class="steps-container">
+
+        <div class="step active" id="step-1">
+            <h3 class="step-title">A — AWARENESS</h3>
+            <p class="step-hint">What pattern did you notice in yourself today that you wouldn't normally admit?</p>
+            <textarea id="awareness" placeholder="No filter. Just truth."></textarea>
+        </div>
+
+        <div class="step" id="step-2">
+            <h3 class="step-title">S — STRATEGY</h3>
+            <p class="step-hint">One decision you made today. Was it actually smart or just comfortable?</p>
+            <textarea id="strategy" placeholder="Decision, reasoning, outcome..."></textarea>
+        </div>
+
+        <div class="step" id="step-3">
+            <h3 class="step-title">C — COGNITION</h3>
+            <p class="step-hint">What did you learn today? Not consumed — actually understood and used. If nothing, why?</p>
+            <textarea id="cognition" placeholder="Learned what, used how, or why nothing..."></textarea>
+        </div>
+
+        <div class="step" id="step-4">
+            <h3 class="step-title">E — EMOTIONAL INTELLIGENCE</h3>
+            <p class="step-hint">What triggered you today? What did you feel, what did you do, what should you have done?</p>
+            <textarea id="emotional" placeholder="Trigger, reaction, correct response..."></textarea>
+        </div>
+
+        <div class="step" id="step-5">
+            <h3 class="step-title">N — NETWORK</h3>
+            <p class="step-hint">Did you give anyone your full attention today? What insecurity showed up?</p>
+            <textarea id="network" placeholder="Interaction, insecurity, why it appeared..."></textarea>
+        </div>
+
+        <div class="step" id="step-6">
+            <h3 class="step-title">D — DEVELOPMENT</h3>
+            <p class="step-hint">Did you train? If not — real reason, not excuse. If yes — what did you notice?</p>
+            <textarea id="development" placeholder="Trained or not. Real answer only."></textarea>
+        </div>
+
+    </div>
+
+    <!-- NAVIGATION -->
+    <div class="step-nav">
+        <button class="nav-btn" id="prev-btn" onclick="prevStep()" style="display:none">← BACK</button>
+        <button class="nav-btn primary" id="next-btn" onclick="nextStep()">NEXT →</button>
+        <button class="nav-btn primary" id="submit-btn" onclick="submitCheckin()" style="display:none">SUBMIT // LET ASCEND ANALYZE</button>
+    </div>
+
+    <!-- RESPONSE -->
+    <div class="ascend-response" id="response-box" style="display:none">
+        <h3>ASCEND SAYS //</h3>
+        <p id="response-text"></p>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

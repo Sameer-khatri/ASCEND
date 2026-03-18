@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <div class="weak-pillar">
+            FOCUS // <span id="weak-pillar">Emotional Control</span>
+        </div>
+        <div class="streak">
+            STREAK // <span id="streak">0</span> days
+        </div>
+    </div>
+
+    <!-- CENTER -->
+    <div class="center">
+        <h1 class="name">SHADOW</h1>
+        <p class="quote1">"The magic you are looking for is in the work you are avoiding."</p>
+        <p class="quote2">"Move before feelings. Don't let emotions guide your actions."</p>
+    </div>
+
+    <!-- 6 PILLAR BARS -->
+    <div class="pillars">
+        <div class="pillar">
+            <span>A — Awareness</span>
+            <div class="bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="pillar">
+            <span>S — Strategy</span>
+            <div class="bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="pillar">
+            <span>C — Cognition</span>
+            <div class="bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="pillar">
+            <span>E — Emotional Intelligence</span>
+            <div class="bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="pillar">
+            <span>N — Network</span>
+            <div class="bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="pillar">
+            <span>D — Development</span>
+            <div class="bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+    </div>
+<!-- QUICK LOG BUTTON -->
+<div class="quicklog-btn-container">
+    <button class="quicklog-trigger" onclick="toggleQuickLog()">
+        + QUICK LOG
+    </button>
+</div>
+
+<!-- QUICK LOG PANEL -->
+<!-- QUICK LOG BUTTON -->
+<div class="quicklog-btn-container">
+    <button class="quicklog-trigger" onclick="toggleQuickLog()">
+        + QUICK LOG
+    </button>
+</div>
+<div class="quicklog-panel" id="quicklog-panel" style="display:none">
+    <div class="quicklog-inner">
+        <p class="quicklog-title">LOG THIS MOMENT //</p>
+        
+        <select id="quicklog-pillar">
+            <option value="awareness">A — AWARENESS</option>
+            <option value="strategy">S — STRATEGY</option>
+            <option value="cognition">C — COGNITION</option>
+            <option value="emotional">E — EMOTIONAL</option>
+            <option value="network">N — NETWORK</option>
+            <option value="development">D — DEVELOPMENT</option>
+        </select>
+
+        <textarea id="quicklog-text" placeholder="What just happened? One line. Raw."></textarea>
+
+        <button class="quicklog-save" onclick="saveQuickLog()">SAVE LOG</button>
+        <button class="quicklog-close" onclick="toggleQuickLog()">CANCEL</button>
+
+        <!-- TODAY'S LOGS -->
+        <div id="today-logs"></div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
