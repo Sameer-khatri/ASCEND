@@ -98,13 +98,15 @@ async function loadContext() {
         'development': `Yesterday on training: "${context.development.substring(0, 60)}..." — Did you train today?`
     };
     
-    const ids = ['awareness', 'strategy', 'cognition', 'emotional', 'network', 'development'];
+const ids = ['awareness', 'strategy', 'cognition', 'emotional', 'network', 'development'];
+setTimeout(() => {
     ids.forEach(id => {
         const hint = document.querySelector(`#step-${ids.indexOf(id)+1} .step-hint`);
         if (hint && hints[id]) {
             hint.innerText = hints[id];
         }
     });
+}, 500);
 }
 
 
