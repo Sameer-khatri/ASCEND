@@ -77,7 +77,35 @@ async function submitCheckin() {
     document.getElementById('response-text').innerText = data.feedback;
 }
 
-if (document.getElementById('progress-fill')) updateProgress();
+if (document.getElementById('progress-fill')) {
+    loadContext();
+}
+
+async function loadContext() {
+    const response = await fetch('/get_context');
+    const context = await response.json();
+    
+    updateProgress();
+    
+    if (!context.has_context) return;
+    
+    const hints = {
+        'awareness': `Yesterday you noticed: "${context.awareness.substring(0, 60)}..." — Did this pattern repeat today?`,
+        'strategy': `Yesterday's decision: "${context.strategy.substring(0, 60)}..." — What did you decide today?`,
+        'cognition': `Yesterday on learning: "${context.cognition.substring(0, 60)}..." — What did you apply today?`,
+        'emotional': `Yesterday you were triggered by: "${context.emotional.substring(0, 60)}..." — Same trigger or different today?`,
+        'network': `Yesterday socially: "${context.network.substring(0, 60)}..." — How were your interactions today?`,
+        'development': `Yesterday on training: "${context.development.substring(0, 60)}..." — Did you train today?`
+    };
+    
+    const ids = ['awareness', 'strategy', 'cognition', 'emotional', 'network', 'development'];
+    ids.forEach(id => {
+        const hint = document.querySelector(`#step-${ids.indexOf(id)+1} .step-hint`);
+        if (hint && hints[id]) {
+            hint.innerText = hints[id];
+        }
+    });
+}
 
 
 // ===== QUICK LOG SYSTEM =====

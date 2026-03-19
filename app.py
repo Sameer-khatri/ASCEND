@@ -111,6 +111,23 @@ def getlogs():
     logs = [{'time': r[0], 'pillar': r[1], 'note': r[2]} for r in c.fetchall()]
     conn.close()
     return jsonify({'logs': logs})
+@app.route('/get_context')
+def get_context():
+    last = get_last_checkin()
+    if not last:
+        return jsonify({'has_context': False})
+    
+    return jsonify({
+        'has_context': True,
+        'date': last[1],
+        'awareness': last[2],
+        'strategy': last[3],
+        'cognition': last[4],
+        'emotional': last[5],
+        'network': last[6],
+        'development': last[7],
+        'feedback': last[8]
+    })
 if __name__ == '__main__':
     import os
     port = int(os.environ.get('PORT', 5000))
