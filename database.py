@@ -1,12 +1,21 @@
-import sqlite3
+import os
+import psycopg2
 from datetime import datetime
 
+def get_conn():
+    database_url = os.getenv('DATABASE_URL')
+    if database_url:
+        return psycopg2.connect(database_url)
+    else:
+        import sqlite3
+        return sqlite3.connect('ascend.db')
+
 def init_db():
-    conn = sqlite3.connect('ascend.db')
+    conn = get_conn()
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS checkins (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             date TEXT,
             awareness TEXT,
             strategy TEXT,
@@ -17,16 +26,25 @@ def init_db():
             feedback TEXT
         )
     ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS quicklogs (
+            id SERIAL PRIMARY KEY,
+            date TEXT,
+            time TEXT,
+            pillar TEXT,
+            note TEXT
+        )
+    ''')
     conn.commit()
     conn.close()
 
 def save_checkin(awareness, strategy, cognition, emotional, network, development, feedback):
-    conn = sqlite3.connect('ascend.db')
+    conn = get_conn()
     c = conn.cursor()
     c.execute('''
         INSERT INTO checkins 
         (date, awareness, strategy, cognition, emotional, network, development, feedback)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     ''', (
         datetime.now().strftime('%Y-%m-%d'),
         awareness, strategy, cognition,
@@ -36,7 +54,7 @@ def save_checkin(awareness, strategy, cognition, emotional, network, development
     conn.close()
 
 def get_last_checkin():
-    conn = sqlite3.connect('ascend.db')
+    conn = get_conn()
     c = conn.cursor()
     c.execute('SELECT * FROM checkins ORDER BY id DESC LIMIT 1')
     row = c.fetchone()
@@ -44,7 +62,7 @@ def get_last_checkin():
     return row
 
 def get_streak():
-    conn = sqlite3.connect('ascend.db')
+    conn = get_conn()
     c = conn.cursor()
     c.execute('SELECT DISTINCT date FROM checkins ORDER BY date DESC')
     dates = [row[0] for row in c.fetchall()]
@@ -62,3 +80,27 @@ def get_streak():
         else:
             break
     return streak
+
+def save_quicklog(pillar, note):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute('''
+        INSERT INTO quicklogs (date, time, pillar, note)
+        VALUES (%s, %s, %s, %s)
+    ''', (
+        datetime.now().strftime('%Y-%m-%d'),
+        datetime.now().strftime('%H:%M'),
+        pillar,
+        note
+    ))
+    conn.commit()
+    conn.close()
+
+def get_today_quicklogs():
+    conn = get_conn()
+    c = conn.cursor()
+    today = datetime.now().strftime('%Y-%m-%d')
+    c.execute('SELECT time, pillar, note FROM quicklogs WHERE date = %s ORDER BY id DESC', (today,))
+    logs = [{'time': r[0], 'pillar': r[1], 'note': r[2]} for r in c.fetchall()]
+    conn.close()
+    return logs
