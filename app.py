@@ -37,6 +37,7 @@ NETWORK: {data['network']}
 DEVELOPMENT: {data['development']}
 
 Analyze patterns. Call out weaknesses directly. Be specific not generic.
+For each weakness identified — give one specific action they should have taken instead. Be direct and practical.
 """
 
     response = requests.post(
