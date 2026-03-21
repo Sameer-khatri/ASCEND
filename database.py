@@ -104,3 +104,43 @@ def get_today_quicklogs():
     logs = [{'time': r[0], 'pillar': r[1], 'note': r[2]} for r in c.fetchall()]
     conn.close()
     return logs
+def save_career_progress(track1, track2, track3, track4):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS career_progress (
+            id SERIAL PRIMARY KEY,
+            track1 INTEGER DEFAULT 1,
+            track2 INTEGER DEFAULT 0,
+            track3 INTEGER DEFAULT 0,
+            track4 INTEGER DEFAULT 1,
+            updated_at TEXT
+        )
+    ''')
+    c.execute('DELETE FROM career_progress')
+    c.execute('''
+        INSERT INTO career_progress (track1, track2, track3, track4, updated_at)
+        VALUES (%s, %s, %s, %s, %s)
+    ''', (track1, track2, track3, track4, datetime.now().strftime('%Y-%m-%d %H:%M')))
+    conn.commit()
+    conn.close()
+
+def load_career_progress():
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS career_progress (
+            id SERIAL PRIMARY KEY,
+            track1 INTEGER DEFAULT 1,
+            track2 INTEGER DEFAULT 0,
+            track3 INTEGER DEFAULT 0,
+            track4 INTEGER DEFAULT 1,
+            updated_at TEXT
+        )
+    ''')
+    c.execute('SELECT track1, track2, track3, track4 FROM career_progress LIMIT 1')
+    row = c.fetchone()
+    conn.close()
+    if row:
+        return {'track1': row[0], 'track2': row[1], 'track3': row[2], 'track4': row[3]}
+    return {'track1': 1, 'track2': 0, 'track3': 0, 'track4': 1}

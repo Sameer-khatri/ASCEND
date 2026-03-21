@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import os
 import requests
 import json
-from database import init_db, save_checkin, get_last_checkin, get_streak, get_today_quicklogs
+from database import init_db, save_checkin, get_last_checkin, get_streak, get_today_quicklogs, save_career_progress, load_career_progress
 import sqlite3
 from datetime import datetime
 load_dotenv()
@@ -138,12 +138,7 @@ TRACK4_VISIBILITY = [
     {"task": "Connect with 20 people from your college on LinkedIn"},
 ]
 
-career_progress = {
-    "track1": 1,
-    "track2": 0,
-    "track3": 0,
-    "track4": 1,
-}
+career_progress = load_career_progress()
 
 @app.route('/career')
 def career():
@@ -215,6 +210,7 @@ End with one specific tip for tomorrow based on today's performance.
 
     result = response.json()
     feedback = result.get('choices', [{}])[0].get('message', {}).get('content', str(result))
+    save_career_progress(career_progress['track1'], career_progress['track2'], career_progress['track3'], career_progress['track4'])
     return jsonify({'feedback': feedback})
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
