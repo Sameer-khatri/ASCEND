@@ -556,3 +556,90 @@ textarea::placeholder {
     background-color: #ff4444;
     color: #000000;
 }
+/* MISSION BOX */
+.mission-box {
+    border-left: 2px solid #ff4444;
+    padding: 20px 25px;
+    background-color: #0f0f0f;
+    margin: 30px 0 40px 0;
+}
+
+.mission-header {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: #ff4444;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+
+.mission-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #1a1a1a;
+}
+
+.mission-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.mission-label {
+    font-size: 11px;
+    color: #ff4444;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+.mission-task {
+    font-size: 14px;
+    color: #cccccc;
+    line-height: 1.6;
+    letter-spacing: 0.5px;
+}
+
+.mission-link {
+    color: #ff4444;
+    text-decoration: none;
+    font-size: 11px;
+    letter-spacing: 2px;
+    margin-top: 5px;
+    width: fit-content;
+    border-bottom: 1px solid #ff4444;
+    padding-bottom: 2px;
+    transition: all 0.3s ease;
+}
+
+.mission-link:hover {
+    color: #ffffff;
+    border-color: #ffffff;
+}
+
+.mission-loading {
+    font-size: 12px;
+    color: #444444;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* SELECT DROPDOWNS */
+select {
+    width: 100%;
+    background-color: #111111;
+    border: 1px solid #2a2a2a;
+    border-bottom: 2px solid #ff4444;
+    color: #ffffff;
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    padding: 12px;
+    outline: none;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+    cursor: pointer;
+}
+
+select option {
+    background-color: #111111;
+}
