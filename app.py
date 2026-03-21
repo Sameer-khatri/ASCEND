@@ -102,6 +102,45 @@ def get_context():
         'feedback': last[8]
     })
 
+@app.route('/career')
+def career():
+    return render_template('career.html')
+
+@app.route('/career_analyze', methods=['POST'])
+def career_analyze():
+    data = request.get_json()
+    groq_api_key = os.getenv('GROQ_API_KEY')
+
+    prompt = f"""
+You are ASCEND Career Engine — brutally honest career coach for SHADOW.
+Target: 15 LPA placement in 18 months. Tier 3 college. AI/automation focus.
+Current projects: ASCEND (personal AI system), PLC automation system for industrial client.
+
+Assess today's career progress honestly. Be specific and direct.
+If they skipped DSA — call it out. If they built something real — acknowledge it.
+End with one specific action for tomorrow.
+
+DSA TODAY: {data['dsa']}
+BUILD TODAY: {data['build']}
+LEARNED TODAY: {data['learn']}
+"""
+
+    response = requests.post(
+        'https://api.groq.com/openai/v1/chat/completions',
+        headers={
+            'Authorization': f'Bearer {groq_api_key}',
+            'Content-Type': 'application/json'
+        },
+        json={
+            'model': 'llama-3.3-70b-versatile',
+            'messages': [{'role': 'user', 'content': prompt}],
+            'max_tokens': 300
+        }
+    )
+
+    result = response.json()
+    feedback = result.get('choices', [{}])[0].get('message', {}).get('content', str(result))
+    return jsonify({'feedback': feedback})
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)

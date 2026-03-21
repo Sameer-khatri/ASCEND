@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCEND // CAREER</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="career-wrapper">
+
+    <!-- HEADER -->
+    <div class="checkin-header">
+        <a href="/" class="back">← ASCEND</a>
+        <h2 class="checkin-title">CAREER ENGINE // SHADOW</h2>
+        <p class="checkin-sub">Target: 15 LPA — 18 months remaining</p>
+    </div>
+
+    <!-- PROGRESS BARS -->
+    <div class="career-stats">
+        <div class="stat-row">
+            <span class="stat-label">DSA PROBLEMS SOLVED</span>
+            <span class="stat-value" id="dsa-count">0</span>
+        </div>
+        <div class="career-bar">
+            <div class="career-bar-fill" id="dsa-bar" style="width:0%"></div>
+        </div>
+
+        <div class="stat-row">
+            <span class="stat-label">DAYS CODED THIS MONTH</span>
+            <span class="stat-value" id="code-count">0</span>
+        </div>
+        <div class="career-bar">
+            <div class="career-bar-fill" id="code-bar" style="width:0%"></div>
+        </div>
+
+        <div class="stat-row">
+            <span class="stat-label">CURRENT STREAK</span>
+            <span class="stat-value" id="career-streak">0 days</span>
+        </div>
+    </div>
+
+    <!-- DAILY LOG -->
+    <div class="career-log">
+
+        <div class="pillar-block">
+            <h3>DSA TODAY</h3>
+            <p class="pillar-hint">Which problem did you attempt? Easy / Medium / Hard? Solved or stuck?</p>
+            <textarea id="dsa-log" placeholder="Problem name, difficulty, outcome..."></textarea>
+        </div>
+
+        <div class="pillar-block">
+            <h3>BUILD TODAY</h3>
+            <p class="pillar-hint">Did you write any code today? What did you build, fix, or improve?</p>
+            <textarea id="build-log" placeholder="What you built or worked on..."></textarea>
+        </div>
+
+        <div class="pillar-block">
+            <h3>LEARNED TODAY</h3>
+            <p class="pillar-hint">One thing you actually understood — not just watched or read. What can you now do that you couldn't before?</p>
+            <textarea id="learn-log" placeholder="Concept, skill, or insight actually understood..."></textarea>
+        </div>
+
+        <button class="submit-btn" onclick="submitCareer()">
+            SUBMIT // ASCEND ASSESS
+        </button>
+
+        <!-- RESPONSE -->
+        <div class="ascend-response" id="career-response" style="display:none">
+            <h3>ASCEND CAREER ASSESSMENT //</h3>
+            <p id="career-response-text"></p>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+async function submitCareer() {
+    const dsa = document.getElementById('dsa-log').value;
+    const build = document.getElementById('build-log').value;
+    const learn = document.getElementById('learn-log').value;
+
+    if (!dsa || !build || !learn) {
+        alert('Fill all three. No shortcuts.');
+        return;
+    }
+
+    document.getElementById('career-response').style.display = 'block';
+    document.getElementById('career-response-text').innerText = 'ASCEND is assessing your progress...';
+
+    const response = await fetch('/career_analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dsa, build, learn })
+    });
+
+    const data = await response.json();
+    document.getElementById('career-response-text').innerText = data.feedback;
+}
+</script>
+
+</body>
+</html>
