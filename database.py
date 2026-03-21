@@ -1,22 +1,11 @@
 import os
-import pg8000
 from datetime import datetime
 
 def get_conn():
     database_url = os.getenv('DATABASE_URL')
     if database_url:
-        import pg8000.dbapi
-        # Parse the URL manually
-        import urllib.parse
-        result = urllib.parse.urlparse(database_url)
-        return pg8000.dbapi.connect(
-            host=result.hostname,
-            port=result.port or 5432,
-            database=result.path[1:],
-            user=result.username,
-            password=result.password,
-            ssl_context=True
-        )
+        import psycopg2
+        return psycopg2.connect(database_url)
     else:
         import sqlite3
         return sqlite3.connect('ascend.db')
