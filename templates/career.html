@@ -11,14 +11,13 @@
 
 <div class="career-wrapper">
 
-    <!-- HEADER -->
     <div class="checkin-header">
         <a href="/" class="back">← ASCEND</a>
         <h2 class="checkin-title">CAREER ENGINE // SHADOW</h2>
         <p class="checkin-sub">Target: 15 LPA — 18 months remaining</p>
     </div>
 
-    <!-- PROGRESS BARS -->
+    <!-- STATS -->
     <div class="career-stats">
         <div class="stat-row">
             <span class="stat-label">DSA PROBLEMS SOLVED</span>
@@ -27,7 +26,6 @@
         <div class="career-bar">
             <div class="career-bar-fill" id="dsa-bar" style="width:0%"></div>
         </div>
-
         <div class="stat-row">
             <span class="stat-label">DAYS CODED THIS MONTH</span>
             <span class="stat-value" id="code-count">0</span>
@@ -35,41 +33,60 @@
         <div class="career-bar">
             <div class="career-bar-fill" id="code-bar" style="width:0%"></div>
         </div>
-
         <div class="stat-row">
             <span class="stat-label">CURRENT STREAK</span>
-            <span class="stat-value" id="career-streak">0 days</span>
+            <span class="stat-value" id="career-streak">0 DAYS</span>
         </div>
     </div>
 
-    <!-- DAILY LOG -->
-    <div class="career-log">
+    <!-- TODAY'S MISSION -->
+    <div class="mission-box" id="mission-box">
+        <p class="mission-loading">Loading today's mission...</p>
+    </div>
+
+    <!-- REPORT BACK -->
+    <div class="career-log" id="report-section" style="display:none">
 
         <div class="pillar-block">
-            <h3>DSA TODAY</h3>
-            <p class="pillar-hint">Which problem did you attempt? Easy / Medium / Hard? Solved or stuck?</p>
-            <textarea id="dsa-log" placeholder="Problem name, difficulty, outcome..."></textarea>
+            <h3>DSA — DID YOU ATTEMPT IT?</h3>
+            <p class="pillar-hint" id="dsa-hint"></p>
+            <select id="dsa-status">
+                <option value="solved">Solved it</option>
+                <option value="partial">Partially solved</option>
+                <option value="stuck">Got stuck</option>
+                <option value="skipped">Skipped</option>
+            </select>
+            <textarea id="dsa-notes" placeholder="What did you try? Where did you get stuck?" style="margin-top:10px"></textarea>
         </div>
 
         <div class="pillar-block">
-            <h3>BUILD TODAY</h3>
-            <p class="pillar-hint">Did you write any code today? What did you build, fix, or improve?</p>
-            <textarea id="build-log" placeholder="What you built or worked on..."></textarea>
+            <h3>LEARN — DID YOU STUDY IT?</h3>
+            <p class="pillar-hint" id="learn-hint"></p>
+            <select id="learn-status">
+                <option value="done">Understood it</option>
+                <option value="partial">Partially understood</option>
+                <option value="skipped">Skipped</option>
+            </select>
+            <textarea id="learn-notes" placeholder="What specifically did you understand or not understand?" style="margin-top:10px"></textarea>
         </div>
 
         <div class="pillar-block">
-            <h3>LEARNED TODAY</h3>
-            <p class="pillar-hint">One thing you actually understood — not just watched or read. What can you now do that you couldn't before?</p>
-            <textarea id="learn-log" placeholder="Concept, skill, or insight actually understood..."></textarea>
+            <h3>BUILD — DID YOU CODE TODAY?</h3>
+            <p class="pillar-hint" id="build-hint"></p>
+            <select id="build-status">
+                <option value="done">Yes — built something</option>
+                <option value="partial">Started but incomplete</option>
+                <option value="skipped">No</option>
+            </select>
+            <textarea id="build-notes" placeholder="What did you build or work on?" style="margin-top:10px"></textarea>
         </div>
 
         <button class="submit-btn" onclick="submitCareer()">
-            SUBMIT // ASCEND ASSESS
+            SUBMIT // GET TOMORROW'S MISSION
         </button>
 
-        <!-- RESPONSE -->
         <div class="ascend-response" id="career-response" style="display:none">
-            <h3>ASCEND CAREER ASSESSMENT //</h3>
+            <h3>ASCEND SAYS //</h3>
             <p id="career-response-text"></p>
         </div>
 
@@ -78,28 +95,60 @@
 </div>
 
 <script>
-async function submitCareer() {
-    const dsa = document.getElementById('dsa-log').value;
-    const build = document.getElementById('build-log').value;
-    const learn = document.getElementById('learn-log').value;
+// Load today's mission on page load
+async function loadMission() {
+    const response = await fetch('/get_mission');
+    const data = await response.json();
+    
+    const box = document.getElementById('mission-box');
+    box.innerHTML = `
+        <div class="mission-header">TODAY'S MISSION //</div>
+        <div class="mission-item">
+            <span class="mission-label">DSA //</span>
+            <span class="mission-task">${data.dsa}</span>
+            <a href="${data.dsa_link}" target="_blank" class="mission-link">OPEN →</a>
+        </div>
+        <div class="mission-item">
+            <span class="mission-label">LEARN //</span>
+            <span class="mission-task">${data.learn}</span>
+            <a href="${data.learn_link}" target="_blank" class="mission-link">OPEN →</a>
+        </div>
+        <div class="mission-item">
+            <span class="mission-label">BUILD //</span>
+            <span class="mission-task">${data.build}</span>
+        </div>
+    `;
+    
+    document.getElementById('dsa-hint').innerText = data.dsa;
+    document.getElementById('learn-hint').innerText = data.learn;
+    document.getElementById('build-hint').innerText = data.build;
+    document.getElementById('report-section').style.display = 'block';
+}
 
-    if (!dsa || !build || !learn) {
-        alert('Fill all three. No shortcuts.');
-        return;
-    }
+async function submitCareer() {
+    const payload = {
+        dsa_status: document.getElementById('dsa-status').value,
+        dsa_notes: document.getElementById('dsa-notes').value,
+        learn_status: document.getElementById('learn-status').value,
+        learn_notes: document.getElementById('learn-notes').value,
+        build_status: document.getElementById('build-status').value,
+        build_notes: document.getElementById('build-notes').value,
+    };
 
     document.getElementById('career-response').style.display = 'block';
-    document.getElementById('career-response-text').innerText = 'ASCEND is assessing your progress...';
+    document.getElementById('career-response-text').innerText = 'ASCEND is generating tomorrow\'s mission...';
 
-    const response = await fetch('/career_analyze', {
+    const response = await fetch('/career_submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dsa, build, learn })
+        body: JSON.stringify(payload)
     });
 
     const data = await response.json();
     document.getElementById('career-response-text').innerText = data.feedback;
 }
+
+loadMission();
 </script>
 
 </body>

@@ -106,23 +106,39 @@ def get_context():
 def career():
     return render_template('career.html')
 
-@app.route('/career_analyze', methods=['POST'])
-def career_analyze():
+@app.route('/get_mission')
+def get_mission():
+    # Week 1 default mission — hardcoded for now, will adapt later
+    return jsonify({
+        'dsa': 'Two Sum — Easy — Array problem. Given an array of integers, return indices of two numbers that add up to target.',
+        'dsa_link': 'https://leetcode.com/problems/two-sum/',
+        'learn': 'Python functions and loops — write 5 functions from scratch today without googling syntax.',
+        'learn_link': 'https://www.w3schools.com/python/python_functions.asp',
+        'build': 'Open ASCEND code. Read through app.py and understand every route. Write comments explaining what each one does.'
+    })
+
+@app.route('/career_submit', methods=['POST'])
+def career_submit():
     data = request.get_json()
     groq_api_key = os.getenv('GROQ_API_KEY')
 
     prompt = f"""
 You are ASCEND Career Engine — brutally honest career coach for SHADOW.
-Target: 15 LPA placement in 18 months. Tier 3 college. AI/automation focus.
-Current projects: ASCEND (personal AI system), PLC automation system for industrial client.
+Target: 15 LPA in 18 months. Currently at Level 0 coding. Tier 3 college.
+Projects: ASCEND (personal AI system), PLC automation for industrial client.
 
-Assess today's career progress honestly. Be specific and direct.
-If they skipped DSA — call it out. If they built something real — acknowledge it.
-End with one specific action for tomorrow.
+Today's report:
+DSA: {data['dsa_status']} — {data['dsa_notes']}
+LEARN: {data['learn_status']} — {data['learn_notes']}
+BUILD: {data['build_status']} — {data['build_notes']}
 
-DSA TODAY: {data['dsa']}
-BUILD TODAY: {data['build']}
-LEARNED TODAY: {data['learn']}
+Give brutally honest assessment of today. Then give tomorrow's specific mission:
+1. Tomorrow's DSA problem with exact name
+2. Tomorrow's learning focus with exact resource
+3. Tomorrow's build task
+
+Be specific. No vague advice. Real actionable tasks only.
+If they skipped today — call it out directly before giving tomorrow's mission.
 """
 
     response = requests.post(
@@ -134,7 +150,7 @@ LEARNED TODAY: {data['learn']}
         json={
             'model': 'llama-3.3-70b-versatile',
             'messages': [{'role': 'user', 'content': prompt}],
-            'max_tokens': 300
+            'max_tokens': 400
         }
     )
 
