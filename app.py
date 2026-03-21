@@ -101,6 +101,49 @@ def get_context():
         'development': last[7],
         'feedback': last[8]
     })
+TRACK1_DSA = [
+    {"problem": "Two Sum — DONE ✅", "link": "#"},
+    {"problem": "Best Time to Buy and Sell Stock", "link": "https://leetcode.com/problems/best-time-to-buy-and-sell-stock/"},
+    {"problem": "Contains Duplicate", "link": "https://leetcode.com/problems/contains-duplicate/"},
+    {"problem": "Maximum Subarray", "link": "https://leetcode.com/problems/maximum-subarray/"},
+    {"problem": "Move Zeroes", "link": "https://leetcode.com/problems/move-zeroes/"},
+    {"problem": "Single Number", "link": "https://leetcode.com/problems/single-number/"},
+    {"problem": "Find All Numbers Disappeared in Array", "link": "https://leetcode.com/problems/find-all-numbers-disappeared-in-an-array/"},
+    {"problem": "Running Sum of 1D Array", "link": "https://leetcode.com/problems/running-sum-of-1d-array/"},
+    {"problem": "Shuffle the Array", "link": "https://leetcode.com/problems/shuffle-the-array/"},
+    {"problem": "Kids With the Greatest Number of Candies", "link": "https://leetcode.com/problems/kids-with-the-greatest-number-of-candies/"},
+]
+
+TRACK2_LEARN = [
+    {"task": "Write 5 Python functions from scratch — no AI, no googling syntax", "link": "https://www.w3schools.com/python/python_functions.asp"},
+    {"task": "Loops — write 3 programs using for loops and 3 using while loops", "link": "https://www.w3schools.com/python/python_for_loops.asp"},
+    {"task": "Lists — create, access, modify, sort, loop through 10 exercises", "link": "https://www.w3schools.com/python/python_lists.asp"},
+    {"task": "Dictionaries — create, access, modify, loop through 10 exercises", "link": "https://www.w3schools.com/python/python_dictionaries.asp"},
+    {"task": "File handling — read a file, write to a file, append to a file", "link": "https://www.w3schools.com/python/python_file_handling.asp"},
+]
+
+TRACK3_BUILD = [
+    {"task": "Open ASCEND app.py — write a comment above every route explaining what it does in plain English"},
+    {"task": "Open ASCEND database.py — explain every function in comments without AI help"},
+    {"task": "Draw on paper — how ASCEND works end to end from user clicking submit to getting response"},
+    {"task": "Modify ASCEND feedback prompt — make it more brutal without breaking anything"},
+    {"task": "Add error handling to one route in app.py — what happens if Groq API fails?"},
+]
+
+TRACK4_VISIBILITY = [
+    {"task": "LeetCode account created and Two Sum solved ✅"},
+    {"task": "Write ASCEND README — problem it solves, tech stack, how to run it, screenshots"},
+    {"task": "Make ASCEND GitHub repo public with README"},
+    {"task": "Create LinkedIn — photo, headline, education, add ASCEND as project"},
+    {"task": "Connect with 20 people from your college on LinkedIn"},
+]
+
+career_progress = {
+    "track1": 1,
+    "track2": 0,
+    "track3": 0,
+    "track4": 1,
+}
 
 @app.route('/career')
 def career():
@@ -108,13 +151,23 @@ def career():
 
 @app.route('/get_mission')
 def get_mission():
-    # Week 1 default mission — hardcoded for now, will adapt later
+    t1 = career_progress["track1"]
+    t2 = career_progress["track2"]
+    t3 = career_progress["track3"]
+    t4 = career_progress["track4"]
+
+    dsa = TRACK1_DSA[t1] if t1 < len(TRACK1_DSA) else {"problem": "Phase 1 Complete — Phase 2 unlocked", "link": "#"}
+    learn = TRACK2_LEARN[t2] if t2 < len(TRACK2_LEARN) else {"task": "Track 2 Phase 1 Complete", "link": "#"}
+    build = TRACK3_BUILD[t3] if t3 < len(TRACK3_BUILD) else {"task": "Track 3 Phase 1 Complete"}
+    visibility = TRACK4_VISIBILITY[t4] if t4 < len(TRACK4_VISIBILITY) else {"task": "Track 4 Phase 1 Complete"}
+
     return jsonify({
-        'dsa': 'Two Sum — Easy — Array problem. Given an array of integers, return indices of two numbers that add up to target.',
-        'dsa_link': 'https://leetcode.com/problems/two-sum/',
-        'learn': 'Python functions and loops — write 5 functions from scratch today without googling syntax.',
-        'learn_link': 'https://www.w3schools.com/python/python_functions.asp',
-        'build': 'Open ASCEND code. Read through app.py and understand every route. Write comments explaining what each one does.'
+        'dsa': dsa['problem'],
+        'dsa_link': dsa.get('link', '#'),
+        'learn': learn['task'],
+        'learn_link': learn.get('link', '#'),
+        'build': build['task'],
+        'visibility': visibility['task']
     })
 
 @app.route('/career_submit', methods=['POST'])
@@ -122,23 +175,29 @@ def career_submit():
     data = request.get_json()
     groq_api_key = os.getenv('GROQ_API_KEY')
 
+    t1 = career_progress["track1"]
+    t2 = career_progress["track2"]
+
+    if data.get('dsa_status') in ['solved', 'partial']:
+        career_progress["track1"] = min(t1 + 1, len(TRACK1_DSA) - 1)
+    if data.get('learn_status') in ['done', 'partial']:
+        career_progress["track2"] = min(t2 + 1, len(TRACK2_LEARN) - 1)
+    if data.get('build_status') == 'done':
+        career_progress["track3"] = min(career_progress["track3"] + 1, len(TRACK3_BUILD) - 1)
+
     prompt = f"""
 You are ASCEND Career Engine — brutally honest career coach for SHADOW.
-Target: 15 LPA in 18 months. Currently at Level 0 coding. Tier 3 college.
+Target: 15 LPA in 18 months. Tier 3 college. AI/automation focus.
 Projects: ASCEND (personal AI system), PLC automation for industrial client.
+Current DSA progress: Problem {career_progress['track1']} of 10 in Phase 1.
 
 Today's report:
 DSA: {data['dsa_status']} — {data['dsa_notes']}
 LEARN: {data['learn_status']} — {data['learn_notes']}
 BUILD: {data['build_status']} — {data['build_notes']}
 
-Give brutally honest assessment of today. Then give tomorrow's specific mission:
-1. Tomorrow's DSA problem with exact name
-2. Tomorrow's learning focus with exact resource
-3. Tomorrow's build task
-
-Be specific. No vague advice. Real actionable tasks only.
-If they skipped today — call it out directly before giving tomorrow's mission.
+Give brutally honest assessment. Call out if skipped.
+End with one specific tip for tomorrow based on today's performance.
 """
 
     response = requests.post(
@@ -150,7 +209,7 @@ If they skipped today — call it out directly before giving tomorrow's mission.
         json={
             'model': 'llama-3.3-70b-versatile',
             'messages': [{'role': 'user', 'content': prompt}],
-            'max_tokens': 400
+            'max_tokens': 300
         }
     )
 

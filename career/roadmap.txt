@@ -1,0 +1,263 @@
+ASCEND CAREER ENGINE
+Target: 15 LPA — 18 Months — Shadow
+
+TRACK 1 — DSA
+The gate. No shortcuts.
+Phase 1 — Arrays (current)
+
+Two Sum
+Best Time to Buy and Sell Stock
+Contains Duplicate
+Maximum Subarray
+Move Zeroes
+Intersection of Two Arrays
+Single Number
+Plus One
+Remove Duplicates from Sorted Array
+Rotate Array
+Find All Numbers Disappeared in Array
+Third Maximum Number
+Find Pivot Index
+Running Sum of 1D Array
+Shuffle the Array
+
+Complete all 15 → unlock Phase 2
+Phase 2 — Strings
+
+Reverse String
+First Unique Character
+Valid Anagram
+Palindrome Check
+Reverse Words in String
+Longest Common Prefix
+Count and Say
+Roman to Integer
+Valid Parentheses
+Length of Last Word
+
+Complete all 10 → unlock Phase 3
+Phase 3 — Linked Lists
+
+Reverse Linked List
+Merge Two Sorted Lists
+Delete Node in Linked List
+Remove Nth Node From End
+Linked List Cycle
+Palindrome Linked List
+Intersection of Two Linked Lists
+Middle of Linked List
+Remove Duplicates from Sorted List
+Convert Binary Number in Linked List to Integer
+
+Complete all 10 → unlock Phase 4
+Phase 4 — Trees
+
+Maximum Depth of Binary Tree
+Invert Binary Tree
+Symmetric Tree
+Path Sum
+Minimum Depth of Binary Tree
+Count Complete Tree Nodes
+Binary Tree Paths
+Sum of Left Leaves
+Find Mode in Binary Search Tree
+Merge Two Binary Trees
+
+Complete all 10 → unlock Phase 5
+Phase 5 — Dynamic Programming Basics
+
+Climbing Stairs
+House Robber
+Min Cost Climbing Stairs
+Maximum Subarray (DP approach)
+Best Time to Buy Stock (DP approach)
+Coin Change
+Longest Common Subsequence
+Unique Paths
+Jump Game
+Pascal's Triangle
+
+Complete all 10 → DSA Track Complete ✅
+
+TRACK 2 — Python + AI Tools
+Your actual strength. Build it properly.
+Phase 0 — Understand Your Own Code
+
+Read every line of ASCEND app.py — write comments explaining what each line does
+Explain every route in ASCEND out loud without looking — what it does, why it exists
+Modify one ASCEND feature without AI help
+Read PLC project code — explain what each part does
+Draw a diagram of how ASCEND works end to end
+
+Complete all 5 → unlock Phase 1
+Phase 1 — Python Without AI
+
+Write 10 functions from scratch — no googling syntax
+Build a simple calculator using functions only
+Write a program using loops and conditions that solves a real problem
+Work with lists — sort, filter, search without built-in shortcuts
+Read and write files — save data, load data
+Handle exceptions — try, except, finally
+Work with dictionaries — real use case
+String manipulation — 10 exercises
+Build a simple CLI tool that does something useful
+Write a program with zero AI help start to finish
+
+Complete all 10 → unlock Phase 2
+Phase 2 — OOP
+
+Understand what a class is — write your first class
+Build a Student class with attributes and methods
+Understand inheritance — build a parent and child class
+Rebuild part of ASCEND using OOP structure
+Build a simple inventory system using classes
+Understand encapsulation — private vs public
+Build a Bank Account class with deposit, withdraw, balance
+Understand polymorphism with a real example
+Build a simple game using OOP — even text based
+Refactor one ASCEND file to use classes
+
+Complete all 10 → unlock Phase 3
+Phase 3 — APIs and Databases From Scratch
+
+Make an API call without using any library — raw requests only
+Build a simple REST API with Flask from scratch
+Connect to SQLite without using any helper functions
+Build a CRUD system — Create, Read, Update, Delete
+Understand what PostgreSQL is and why it's different from SQLite
+Connect to an external API and do something useful with the data
+Build a simple data pipeline — fetch, process, store
+Understand authentication — API keys, tokens
+Build a weather app using a free weather API
+Document your API properly
+
+Complete all 10 → unlock Phase 4
+Phase 4 — AI Tools Mastery
+
+Build something with Groq API from scratch — no ASCEND reference
+Build something with Gemini API
+Build something with OpenAI API
+Compare all three — write your honest assessment
+Build an AI tool that solves a real problem for someone you know
+Understand prompt engineering — write 10 different prompts for same task, compare results
+Build a multi-step AI pipeline — one AI output feeds into another
+Add memory to an AI conversation system from scratch
+Build a simple RAG system — AI that reads a document and answers questions about it
+Deploy one AI tool publicly
+
+Complete all 10 → unlock Phase 5
+Phase 5 — Automation
+
+Automate a repetitive task on your computer using Python
+Build a web scraper that collects useful data
+Automate sending emails with Python
+Build a file organizer — automatically sorts files by type
+Build a price tracker — monitors something online and alerts you
+Automate your daily ASCEND check-in reminder
+Build a report generator — takes data, produces formatted report
+Automate something for your uncle's company
+Build a tool that saves someone at least 1 hour per week
+Document and present one automation project properly
+
+Complete all 10 → Python + AI Track Complete ✅
+
+TRACK 3 — Portfolio
+Proof that you can build real things.
+Phase 1 — Document What Exists
+
+Write ASCEND README — what it is, what problem it solves, tech stack, how to run it
+Add screenshots of ASCEND to README
+Write PLC project README — same structure
+Add both to GitHub — organized, clean
+Record a 2 minute demo video of ASCEND working
+
+Complete all 5 → unlock Phase 2
+Phase 2 — Improve What Exists
+
+Fix the biggest weakness in ASCEND
+Add one meaningful new feature to ASCEND
+Improve PLC project — fix known issues
+Add one feature to PLC project your uncle actually needs
+Get real feedback from someone who uses it
+
+Complete all 5 → unlock Phase 3
+Phase 3 — Build Project 3
+AI Automation Tool — something that solves a real problem
+
+Define the problem clearly — who has it, how painful is it
+Design the solution — what it does, how it works
+Build MVP — minimum working version
+Test with a real user
+Deploy it publicly
+Document it properly
+Add to GitHub and LinkedIn
+
+Complete all 7 → unlock Phase 4
+Phase 4 — Build Project 4
+ML Project — something that predicts or classifies something real
+
+Find a real dataset — not Titanic, something relevant
+Clean and explore the data
+Build and train a simple model
+Evaluate it honestly — accuracy, limitations
+Build a simple interface for it
+Deploy it
+Document it properly
+
+Complete all 7 → Portfolio Track Complete ✅
+
+TRACK 4 — Visibility
+Getting seen by the right people.
+Phase 1 — GitHub Setup
+
+Make ASCEND public with proper README
+Add PLC project
+Add profile photo and bio
+Pin your best 3 repos
+Write a good profile README — who you are, what you build
+
+Complete all 5 → unlock Phase 2
+Phase 2 — LinkedIn Setup
+
+Complete profile — photo, headline, education
+Add ASCEND as a project with description
+Add PLC project
+Add 10 relevant skills
+Connect with 50 people — classmates, seniors, people in AI field
+
+Complete all 5 → unlock Phase 3
+Phase 3 — Consistency
+
+Commit to GitHub every day you code — green squares matter
+Post on LinkedIn once a week — what you built, what you learned
+Engage with 3 posts per week in your field
+Follow 20 relevant companies you want to work at
+Join 3 relevant LinkedIn groups
+
+Complete all 5 → unlock Phase 4
+Phase 4 — Outreach
+
+Message 5 seniors from your college who got placed — ask for advice
+Connect with 10 recruiters at target companies
+Apply to 5 off-campus internships
+Apply to 10 off-campus jobs in final 6 months
+Get at least one referral from your network
+
+Complete all 5 → Visibility Track Complete ✅
+
+COMPLETION CRITERIA
+When all 4 tracks are complete you have:
+
+55 DSA problems solved
+Deep Python + AI tools knowledge
+4 real projects documented and deployed
+Active GitHub and LinkedIn presence
+Real network in your field
+
+That profile gets interviews at 15 LPA companies.
+
+DAILY ROUTINE
+Every day — one task from each active track.
+Report back in Career Engine.
+ASCEND tracks progress and unlocks next steps.
+Time required: 1.5 hours daily minimum.
