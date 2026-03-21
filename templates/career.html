@@ -101,23 +101,27 @@ async function loadMission() {
     const data = await response.json();
     
     const box = document.getElementById('mission-box');
-    box.innerHTML = `
-        <div class="mission-header">TODAY'S MISSION //</div>
-        <div class="mission-item">
-            <span class="mission-label">DSA //</span>
-            <span class="mission-task">${data.dsa}</span>
-            <a href="${data.dsa_link}" target="_blank" class="mission-link">OPEN →</a>
-        </div>
-        <div class="mission-item">
-            <span class="mission-label">LEARN //</span>
-            <span class="mission-task">${data.learn}</span>
-            <a href="${data.learn_link}" target="_blank" class="mission-link">OPEN →</a>
-        </div>
-        <div class="mission-item">
-            <span class="mission-label">BUILD //</span>
-            <span class="mission-task">${data.build}</span>
-        </div>
-    `;
+box.innerHTML = `
+    <div class="mission-header">TODAY'S MISSION //</div>
+    <div class="mission-item">
+        <span class="mission-label">DSA //</span>
+        <span class="mission-task">${data.dsa}</span>
+        <a href="${data.dsa_link}" target="_blank" class="mission-link">OPEN →</a>
+    </div>
+    <div class="mission-item">
+        <span class="mission-label">LEARN //</span>
+        <span class="mission-task">${data.learn}</span>
+        <a href="${data.learn_link}" target="_blank" class="mission-link">OPEN →</a>
+    </div>
+    <div class="mission-item">
+        <span class="mission-label">BUILD //</span>
+        <span class="mission-task">${data.build}</span>
+    </div>
+    <div class="mission-item">
+        <span class="mission-label">VISIBILITY //</span>
+        <span class="mission-task">${data.visibility}</span>
+    </div>
+`;
     
     document.getElementById('dsa-hint').innerText = data.dsa;
     document.getElementById('learn-hint').innerText = data.learn;
