@@ -10,15 +10,15 @@ load_dotenv()
 
 app = Flask(__name__)
 init_db()
-
+#when user go to / show home screen
 @app.route('/')
 def home():
     return render_template('home.html')
-
+#when user go to checkin so checkin page
 @app.route('/checkin')
 def checkin():
     return render_template('checkin.html')
-
+#when user go to analyze reply to the user with groq api key
 @app.route('/analyze', methods=['POST'])
 def analyze():
     data = request.get_json()
@@ -70,7 +70,7 @@ For each weakness — give one specific action they should have taken instead. B
         feedback
     )
     return jsonify({'feedback': feedback})
-
+# when user go to quicklogs show him quicklog page 
 @app.route('/quicklog', methods=['POST'])
 def quicklog():
     data = request.get_json()
@@ -79,12 +79,12 @@ def quicklog():
     from database import save_quicklog
     save_quicklog(pillar, note)
     return jsonify({'status': 'saved'})
-
+#It saves a quick log entry to the database.
 @app.route('/getlogs')
 def getlogs():
     logs = get_today_quicklogs()
     return jsonify({'logs': logs})
-
+#This doesn't tell the user what to do. It **fetches yesterday's check-in data** so the check-in page can show personalized questions.
 @app.route('/get_context')
 def get_context():
     last = get_last_checkin()
@@ -139,11 +139,11 @@ TRACK4_VISIBILITY = [
 ]
 
 career_progress = load_career_progress()
-
+#when user go to /career show him career page that we built
 @app.route('/career')
 def career():
     return render_template('career.html')
-
+#give him mission according to its progression
 @app.route('/get_mission')
 def get_mission():
     t1 = career_progress["track1"]
@@ -164,7 +164,7 @@ def get_mission():
         'build': build['task'],
         'visibility': visibility['task']
     })
-
+#submit the response of user for missions and give proper output by analysinng what he did with groq api
 @app.route('/career_submit', methods=['POST'])
 def career_submit():
     data = request.get_json()
