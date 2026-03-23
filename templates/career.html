@@ -80,6 +80,16 @@
             </select>
             <textarea id="build-notes" placeholder="What did you build or work on?" style="margin-top:10px"></textarea>
         </div>
+        <div class="pillar-block">
+        <h3>VISIBILITY // TRACK 4</h3>
+        <p class="pillar-hint" id="visibility-hint"></p>
+        <select id="visibility-status">
+        <option value="done">Done</option>
+        <option value="partial">Partially done</option>
+        <option value="skipped">Skipped</option>
+        </select>
+        <textarea id="visibility-notes" placeholder="What did you do for visibility today?" style="margin-top:10px"></textarea>
+        </div>
 
         <button class="submit-btn" onclick="submitCareer()">
             SUBMIT // GET TOMORROW'S MISSION
@@ -126,6 +136,7 @@ box.innerHTML = `
     document.getElementById('dsa-hint').innerText = data.dsa;
     document.getElementById('learn-hint').innerText = data.learn;
     document.getElementById('build-hint').innerText = data.build;
+    document.getElementById('visibility-hint').innerText = data.visibility;
     document.getElementById('report-section').style.display = 'block';
 }
 
@@ -137,6 +148,8 @@ async function submitCareer() {
         learn_notes: document.getElementById('learn-notes').value,
         build_status: document.getElementById('build-status').value,
         build_notes: document.getElementById('build-notes').value,
+        visibility_status: document.getElementById('visibility-status').value,
+        visibility_notes: document.getElementById('visibility-notes').value,
     };
 
     document.getElementById('career-response').style.display = 'block';
