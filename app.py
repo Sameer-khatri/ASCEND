@@ -179,7 +179,8 @@ def career_submit():
         career_progress["track2"] = min(t2 + 1, len(TRACK2_LEARN) - 1)
     if data.get('build_status') == 'done':
         career_progress["track3"] = min(career_progress["track3"] + 1, len(TRACK3_BUILD) - 1)
-
+    if data.get('visibility_status') == 'done':
+        career_progress["track4"] = min(career_progress["track4"] + 1, len(TRACK4_VISIBILITY) - 1)
     prompt = f"""
 You are ASCEND Career Engine — brutally honest career coach for SHADOW.
 Target: 15 LPA in 18 months. Tier 3 college. AI/automation focus.
