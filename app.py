@@ -49,6 +49,10 @@ def home():
 def checkin():
     return render_template('checkin.html')
 
+@app.route('/checkin_v2_page')
+def checkin_v2_page():
+    return render_template('checkin_v2.html')
+
 # when user go to analyze reply to the user with groq api key
 @app.route('/analyze', methods=['POST'])
 def analyze():
