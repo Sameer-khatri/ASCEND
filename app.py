@@ -3,22 +3,70 @@ from dotenv import load_dotenv
 import os
 import requests
 import json
-from database import init_db, save_checkin, get_last_checkin, get_streak, get_today_quicklogs, save_career_progress, load_career_progress
+from database import (
+    init_db, save_checkin, get_last_checkin, get_streak,
+    get_today_quicklogs, save_career_progress, load_career_progress,
+    create_incident, update_incident, get_today_incidents,
+    get_missing_pillars_today, get_incident_by_id
+)
 import sqlite3
 from datetime import datetime
 load_dotenv()
 
 app = Flask(__name__)
 init_db()
-#when user go to / show home screen
+
+GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
+GROQ_MODEL = 'llama-3.3-70b-versatile'
+
+# SHADOW personality — used for all incident conversations
+SHADOW_SYSTEM_PROMPT = """
+You are SHADOW — the internal voice of ASCEND, a brutal self-analysis system.
+Your job is to extract 4 specific things from the user about a behavioral incident:
+1. The exact situation (what happened)
+2. What options were available to them
+3. What they actually chose and why
+4. Why they didn't choose the better option — this is the most important part.
+   Sometimes they didn't know the better option existed (clarity gap).
+   Sometimes they knew but still avoided it (resistance).
+
+Rules:
+- Ask only ONE question at a time. Never list multiple questions.
+- Be direct, sharp, honest. Like a smart friend — not a therapist, not a form.
+- No sugarcoating. No generic encouragement.
+- Keep questions short. Make them feel like a real conversation.
+- Once you have all 4 elements clearly, respond with EXACTLY this JSON and nothing else:
+
+{
+  "complete": true,
+  "situation": "...",
+  "options_available": "...",
+  "choice_made": "...",
+  "resistance_reason": "...",
+  "clarity_gap": <1-5>,
+  "resistance_score": <1-5>
+}
+
+clarity_gap: How aware were they of the better option? 1=fully aware, 5=had no idea
+resistance_score: Did they act on what they knew? 1=executed cleanly, 5=knew but completely avoided
+
+Do not output the JSON until you genuinely have all 4 elements from the conversation.
+"""
+
+
+# ── V1 ROUTES (untouched) ───────────────────────────────────────────────────────
+
+# When user goes to / show home screen
 @app.route('/')
 def home():
     return render_template('home.html')
-#when user go to checkin so checkin page
+
+# When user goes to checkin show checkin page
 @app.route('/checkin')
 def checkin():
     return render_template('checkin.html')
-#when user go to analyze reply to the user with groq api key
+
+# When user goes to analyze reply with groq api feedback
 @app.route('/analyze', methods=['POST'])
 def analyze():
     data = request.get_json()
@@ -49,13 +97,13 @@ For each weakness — give one specific action they should have taken instead. B
 """
 
     response = requests.post(
-        'https://api.groq.com/openai/v1/chat/completions',
+        GROQ_URL,
         headers={
             'Authorization': f'Bearer {groq_api_key}',
             'Content-Type': 'application/json'
         },
         json={
-            'model': 'llama-3.3-70b-versatile',
+            'model': GROQ_MODEL,
             'messages': [{'role': 'user', 'content': prompt}],
             'max_tokens': 300
         }
@@ -70,7 +118,8 @@ For each weakness — give one specific action they should have taken instead. B
         feedback
     )
     return jsonify({'feedback': feedback})
-# when user go to quicklogs show him quicklog page 
+
+# When user submits a quick log save it
 @app.route('/quicklog', methods=['POST'])
 def quicklog():
     data = request.get_json()
@@ -79,12 +128,14 @@ def quicklog():
     from database import save_quicklog
     save_quicklog(pillar, note)
     return jsonify({'status': 'saved'})
-#It saves a quick log entry to the database.
+
+# Fetch today's quick logs
 @app.route('/getlogs')
 def getlogs():
     logs = get_today_quicklogs()
     return jsonify({'logs': logs})
-#This doesn't tell the user what to do. It **fetches yesterday's check-in data** so the check-in page can show personalized questions.
+
+# Fetch yesterday's check-in data so checkin page can show personalized questions
 @app.route('/get_context')
 def get_context():
     last = get_last_checkin()
@@ -101,6 +152,7 @@ def get_context():
         'development': last[7],
         'feedback': last[8]
     })
+
 TRACK1_DSA = [
     {"problem": "Two Sum — DONE ✅", "link": "#"},
     {"problem": "Best Time to Buy and Sell Stock", "link": "https://leetcode.com/problems/best-time-to-buy-and-sell-stock/"},
@@ -139,11 +191,13 @@ TRACK4_VISIBILITY = [
 ]
 
 career_progress = load_career_progress()
-#when user go to /career show him career page that we built
+
+# When user goes to /career show career page
 @app.route('/career')
 def career():
     return render_template('career.html')
-#give him mission according to its progression
+
+# Give mission according to user's progression
 @app.route('/get_mission')
 def get_mission():
     t1 = career_progress["track1"]
@@ -164,7 +218,8 @@ def get_mission():
         'build': build['task'],
         'visibility': visibility['task']
     })
-#submit the response of user for missions and give proper output by analysinng what he did with groq api
+
+# Submit career mission response and get Groq feedback
 @app.route('/career_submit', methods=['POST'])
 def career_submit():
     data = request.get_json()
@@ -181,6 +236,7 @@ def career_submit():
         career_progress["track3"] = min(career_progress["track3"] + 1, len(TRACK3_BUILD) - 1)
     if data.get('visibility_status') == 'done':
         career_progress["track4"] = min(career_progress["track4"] + 1, len(TRACK4_VISIBILITY) - 1)
+
     prompt = f"""
 You are ASCEND Career Engine — brutally honest career coach for SHADOW.
 Target: 15 LPA in 18 months. Tier 3 college. AI/automation focus.
@@ -197,13 +253,13 @@ End with one specific tip for tomorrow based on today's performance.
 """
 
     response = requests.post(
-        'https://api.groq.com/openai/v1/chat/completions',
+        GROQ_URL,
         headers={
             'Authorization': f'Bearer {groq_api_key}',
             'Content-Type': 'application/json'
         },
         json={
-            'model': 'llama-3.3-70b-versatile',
+            'model': GROQ_MODEL,
             'messages': [{'role': 'user', 'content': prompt}],
             'max_tokens': 300
         }
@@ -213,6 +269,164 @@ End with one specific tip for tomorrow based on today's performance.
     feedback = result.get('choices', [{}])[0].get('message', {}).get('content', str(result))
     save_career_progress(career_progress['track1'], career_progress['track2'], career_progress['track3'], career_progress['track4'])
     return jsonify({'feedback': feedback})
+
+
+# ── V2 INCIDENT ROUTES ──────────────────────────────────────────────────────────
+
+# Called when user submits a new incident from Quick Log
+# Creates the incident in DB and returns the first AI question
+@app.route('/start_incident', methods=['POST'])
+def start_incident():
+    data = request.get_json()
+    pillar = data.get('pillar', 'awareness')
+    note = data.get('note', '')
+    groq_api_key = os.getenv('GROQ_API_KEY')
+
+    # Save incomplete incident to DB, get its ID
+    incident_id = create_incident(pillar, note)
+
+    # Build initial conversation — user's raw note is the first message
+    conversation = [
+        {'role': 'user', 'content': note}
+    ]
+
+    # Ask Groq for the first follow-up question
+    response = requests.post(
+        GROQ_URL,
+        headers={
+            'Authorization': f'Bearer {groq_api_key}',
+            'Content-Type': 'application/json'
+        },
+        json={
+            'model': GROQ_MODEL,
+            'messages': [
+                {'role': 'system', 'content': SHADOW_SYSTEM_PROMPT},
+                {'role': 'user', 'content': note}
+            ],
+            'max_tokens': 150
+        }
+    )
+
+    result = response.json()
+    ai_reply = result.get('choices', [{}])[0].get('message', {}).get('content', '')
+
+    # Save conversation so far to incident
+    conversation.append({'role': 'assistant', 'content': ai_reply})
+    from database import get_conn
+    conn = get_conn()
+    c = conn.cursor()
+    database_url = os.getenv('DATABASE_URL')
+    p = '%s' if database_url else '?'
+    c.execute(f'UPDATE incidents SET conversation = {p} WHERE id = {p}',
+              (json.dumps(conversation), incident_id))
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        'incident_id': incident_id,
+        'ai_question': ai_reply,
+        'complete': False
+    })
+
+
+# Called on every user reply during the incident conversation
+# Either asks the next question OR extracts all 4 elements and saves them
+@app.route('/continue_incident', methods=['POST'])
+def continue_incident():
+    data = request.get_json()
+    incident_id = data.get('incident_id')
+    user_message = data.get('message', '')
+    groq_api_key = os.getenv('GROQ_API_KEY')
+
+    # Load existing conversation for this incident
+    incident = get_incident_by_id(incident_id)
+    if not incident:
+        return jsonify({'error': 'Incident not found'}), 404
+
+    conversation = json.loads(incident['conversation'])
+
+    # Add user's new message to conversation
+    conversation.append({'role': 'user', 'content': user_message})
+
+    # Build messages for Groq — system prompt + full conversation history
+    messages = [{'role': 'system', 'content': SHADOW_SYSTEM_PROMPT}] + conversation
+
+    response = requests.post(
+        GROQ_URL,
+        headers={
+            'Authorization': f'Bearer {groq_api_key}',
+            'Content-Type': 'application/json'
+        },
+        json={
+            'model': GROQ_MODEL,
+            'messages': messages,
+            'max_tokens': 300
+        }
+    )
+
+    result = response.json()
+    ai_reply = result.get('choices', [{}])[0].get('message', {}).get('content', '')
+
+    # Check if Groq returned the completion JSON
+    try:
+        # Try to parse the reply as JSON — means AI has all 4 elements
+        parsed = json.loads(ai_reply)
+        if parsed.get('complete'):
+            # Save all extracted structured data to the incident
+            state_code = update_incident(
+                incident_id,
+                parsed.get('situation', ''),
+                parsed.get('options_available', ''),
+                parsed.get('choice_made', ''),
+                parsed.get('resistance_reason', ''),
+                parsed.get('clarity_gap', 3),
+                parsed.get('resistance_score', 3),
+                json.dumps(conversation)
+            )
+            return jsonify({
+                'complete': True,
+                'state_code': state_code,
+                'situation': parsed.get('situation', ''),
+                'clarity_gap': parsed.get('clarity_gap'),
+                'resistance_score': parsed.get('resistance_score')
+            })
+    except (json.JSONDecodeError, TypeError):
+        # Not JSON — AI is still asking questions
+        pass
+
+    # Still in conversation — save updated conversation and return next question
+    conversation.append({'role': 'assistant', 'content': ai_reply})
+
+    from database import get_conn
+    conn = get_conn()
+    c = conn.cursor()
+    database_url = os.getenv('DATABASE_URL')
+    p = '%s' if database_url else '?'
+    c.execute(f'UPDATE incidents SET conversation = {p} WHERE id = {p}',
+              (json.dumps(conversation), incident_id))
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        'complete': False,
+        'ai_question': ai_reply
+    })
+
+
+# Called by Check-in page to know which pillars are missing today
+# Also returns today's incidents summary for the debrief
+@app.route('/checkin_context', methods=['GET'])
+def checkin_context():
+    missing = get_missing_pillars_today()
+    incidents = get_today_incidents()
+
+    return jsonify({
+        'missing_pillars': missing,
+        'incidents_today': len(incidents),
+        'incidents': incidents
+    })
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
