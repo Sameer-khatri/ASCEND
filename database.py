@@ -15,58 +15,105 @@ def get_conn():
 def init_db():
     conn = get_conn()
     c = conn.cursor()
+    database_url = os.getenv('DATABASE_URL')
 
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS checkins (
-            id SERIAL PRIMARY KEY,
-            date TEXT,
-            awareness TEXT,
-            strategy TEXT,
-            cognition TEXT,
-            emotional TEXT,
-            network TEXT,
-            development TEXT,
-            feedback TEXT
-        )
-    ''')
+    if database_url:
+        # PostgreSQL syntax
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS checkins (
+                id SERIAL PRIMARY KEY,
+                date TEXT,
+                awareness TEXT,
+                strategy TEXT,
+                cognition TEXT,
+                emotional TEXT,
+                network TEXT,
+                development TEXT,
+                feedback TEXT
+            )
+        ''')
 
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS quicklogs (
-            id SERIAL PRIMARY KEY,
-            date TEXT,
-            time TEXT,
-            pillar TEXT,
-            note TEXT
-        )
-    ''')
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS quicklogs (
+                id SERIAL PRIMARY KEY,
+                date TEXT,
+                time TEXT,
+                pillar TEXT,
+                note TEXT
+            )
+        ''')
 
-    # V2 — incidents table
-    # clarity_gap     : 1-5 — did user know the better option? 1=fully aware, 5=no idea
-    # resistance_score: 1-5 — did user act on what they knew? 1=executed, 5=avoided
-    # state_code      : combined pattern
-    #   1 = low clarity  + low resistance  → unaware, not resisting (needs education)
-    #   2 = low clarity  + high resistance → confused AND avoiding (needs attention)
-    #   3 = high clarity + high resistance → knows but won't act (most dangerous)
-    #   4 = high clarity + low resistance  → knows and executes (growth state)
-    # conversation    : full JSON of AI <-> user dialogue
-    # is_complete     : 0 = conversation in progress, 1 = all 4 elements extracted
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS incidents (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT NOT NULL,
-            time TEXT NOT NULL,
-            pillar TEXT NOT NULL,
-            situation TEXT,
-            options_available TEXT,
-            choice_made TEXT,
-            resistance_reason TEXT,
-            clarity_gap INTEGER,
-            resistance_score INTEGER,
-            state_code INTEGER,
-            conversation TEXT,
-            is_complete INTEGER DEFAULT 0
-        )
-    ''')
+        # V2 — incidents table
+        # clarity_gap     : 1-5 — did user know the better option? 1=fully aware, 5=no idea
+        # resistance_score: 1-5 — did user act on what they knew? 1=executed, 5=avoided
+        # state_code      : combined pattern
+        #   1 = low clarity  + low resistance  → unaware, not resisting (needs education)
+        #   2 = low clarity  + high resistance → confused AND avoiding (needs attention)
+        #   3 = high clarity + high resistance → knows but won't act (most dangerous)
+        #   4 = high clarity + low resistance  → knows and executes (growth state)
+        # conversation    : full JSON of AI <-> user dialogue
+        # is_complete     : 0 = conversation in progress, 1 = all 4 elements extracted
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS incidents (
+                id SERIAL PRIMARY KEY,
+                date TEXT NOT NULL,
+                time TEXT NOT NULL,
+                pillar TEXT NOT NULL,
+                situation TEXT,
+                options_available TEXT,
+                choice_made TEXT,
+                resistance_reason TEXT,
+                clarity_gap INTEGER,
+                resistance_score INTEGER,
+                state_code INTEGER,
+                conversation TEXT,
+                is_complete INTEGER DEFAULT 0
+            )
+        ''')
+
+    else:
+        # SQLite syntax
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS checkins (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT,
+                awareness TEXT,
+                strategy TEXT,
+                cognition TEXT,
+                emotional TEXT,
+                network TEXT,
+                development TEXT,
+                feedback TEXT
+            )
+        ''')
+
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS quicklogs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT,
+                time TEXT,
+                pillar TEXT,
+                note TEXT
+            )
+        ''')
+
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS incidents (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT NOT NULL,
+                time TEXT NOT NULL,
+                pillar TEXT NOT NULL,
+                situation TEXT,
+                options_available TEXT,
+                choice_made TEXT,
+                resistance_reason TEXT,
+                clarity_gap INTEGER,
+                resistance_score INTEGER,
+                state_code INTEGER,
+                conversation TEXT,
+                is_complete INTEGER DEFAULT 0
+            )
+        ''')
 
     conn.commit()
     conn.close()
@@ -75,10 +122,12 @@ def init_db():
 def save_checkin(awareness, strategy, cognition, emotional, network, development, feedback):
     conn = get_conn()
     c = conn.cursor()
-    c.execute('''
+    database_url = os.getenv('DATABASE_URL')
+    p = '%s' if database_url else '?'
+    c.execute(f'''
         INSERT INTO checkins 
         (date, awareness, strategy, cognition, emotional, network, development, feedback)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, {p})
     ''', (
         datetime.now().strftime('%Y-%m-%d'),
         awareness, strategy, cognition,
@@ -121,9 +170,11 @@ def get_streak():
 def save_quicklog(pillar, note):
     conn = get_conn()
     c = conn.cursor()
-    c.execute('''
+    database_url = os.getenv('DATABASE_URL')
+    p = '%s' if database_url else '?'
+    c.execute(f'''
         INSERT INTO quicklogs (date, time, pillar, note)
-        VALUES (%s, %s, %s, %s)
+        VALUES ({p}, {p}, {p}, {p})
     ''', (
         datetime.now().strftime('%Y-%m-%d'),
         datetime.now().strftime('%H:%M'),
@@ -138,7 +189,9 @@ def get_today_quicklogs():
     conn = get_conn()
     c = conn.cursor()
     today = datetime.now().strftime('%Y-%m-%d')
-    c.execute('SELECT time, pillar, note FROM quicklogs WHERE date = %s ORDER BY id DESC', (today,))
+    database_url = os.getenv('DATABASE_URL')
+    p = '%s' if database_url else '?'
+    c.execute(f'SELECT time, pillar, note FROM quicklogs WHERE date = {p} ORDER BY id DESC', (today,))
     logs = [{'time': r[0], 'pillar': r[1], 'note': r[2]} for r in c.fetchall()]
     conn.close()
     return logs
@@ -147,9 +200,13 @@ def get_today_quicklogs():
 def save_career_progress(track1, track2, track3, track4):
     conn = get_conn()
     c = conn.cursor()
-    c.execute('''
+    database_url = os.getenv('DATABASE_URL')
+    p = '%s' if database_url else '?'
+    pk = 'SERIAL' if database_url else 'INTEGER'
+    ai = '' if database_url else 'AUTOINCREMENT'
+    c.execute(f'''
         CREATE TABLE IF NOT EXISTS career_progress (
-            id SERIAL PRIMARY KEY,
+            id {pk} PRIMARY KEY {ai},
             track1 INTEGER DEFAULT 1,
             track2 INTEGER DEFAULT 0,
             track3 INTEGER DEFAULT 0,
@@ -158,9 +215,9 @@ def save_career_progress(track1, track2, track3, track4):
         )
     ''')
     c.execute('DELETE FROM career_progress')
-    c.execute('''
+    c.execute(f'''
         INSERT INTO career_progress (track1, track2, track3, track4, updated_at)
-        VALUES (%s, %s, %s, %s, %s)
+        VALUES ({p}, {p}, {p}, {p}, {p})
     ''', (track1, track2, track3, track4, datetime.now().strftime('%Y-%m-%d %H:%M')))
     conn.commit()
     conn.close()
@@ -169,9 +226,13 @@ def save_career_progress(track1, track2, track3, track4):
 def load_career_progress():
     conn = get_conn()
     c = conn.cursor()
-    c.execute('''
+    database_url = os.getenv('DATABASE_URL')
+    p = '%s' if database_url else '?'
+    pk = 'SERIAL' if database_url else 'INTEGER'
+    ai = '' if database_url else 'AUTOINCREMENT'
+    c.execute(f'''
         CREATE TABLE IF NOT EXISTS career_progress (
-            id SERIAL PRIMARY KEY,
+            id {pk} PRIMARY KEY {ai},
             track1 INTEGER DEFAULT 1,
             track2 INTEGER DEFAULT 0,
             track3 INTEGER DEFAULT 0,

@@ -127,14 +127,16 @@ async function saveQuickLog() {
     const pillar = document.getElementById('quicklog-pillar').value;
     if (!note.trim()) return;
 
-    await fetch('/quicklog', {
+    const response = await fetch('/start_incident', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ note, pillar })
     });
 
-    document.getElementById('quicklog-text').value = '';
-    loadTodayLogs();
+    const data = await response.json();
+    if (data.incident_id) {
+        window.location.href = '/incident/' + data.incident_id;
+    }
 }
 
 async function loadTodayLogs() {

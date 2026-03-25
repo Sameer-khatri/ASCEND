@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>ASCEND · incident analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0a0a0a;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #e5e5e5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* brutalist header */
+        .incident-header {
+            border-bottom: 2px solid #c8ff00;
+            padding: 1rem 1.5rem;
+            background: #0f0f0f;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .title-section h1 {
+            font-family: 'Space Mono', 'SF Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 500;
+            letter-spacing: -0.5px;
+            color: #c8ff00;
+            text-transform: uppercase;
+        }
+
+        .title-section .pillar-tag {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            background: #1f1f1f;
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            margin-top: 0.4rem;
+            border-left: 3px solid #c8ff00;
+            color: #bbbbbb;
+        }
+
+        .meta-badge {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            background: #121212;
+            padding: 0.4rem 1rem;
+            border: 1px solid #2a2a2a;
+            color: #c8ff00;
+        }
+
+        /* chat container */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            scroll-behavior: smooth;
+        }
+
+        /* message bubbles */
+        .message {
+            display: flex;
+            max-width: 85%;
+            animation: fadeSlideUp 0.2s ease-out;
+        }
+
+        .message.ai {
+            align-self: flex-start;
+            justify-content: flex-start;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            justify-content: flex-end;
+        }
+
+        .bubble {
+            padding: 0.9rem 1.2rem;
+            border-radius: 1.2rem;
+            line-height: 1.45;
+            font-size: 0.95rem;
+            word-break: break-word;
+            white-space: pre-wrap;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .ai .bubble {
+            background: #1e1e1e;
+            border: 1px solid #2c2c2c;
+            border-bottom-left-radius: 0.3rem;
+            color: #eaeaea;
+        }
+
+        .user .bubble {
+            background: #c8ff00;
+            color: #0a0a0a;
+            border-bottom-right-radius: 0.3rem;
+            font-weight: 500;
+        }
+
+        /* timestamp / subtle */
+        .message-meta {
+            font-size: 0.65rem;
+            font-family: 'Space Mono', monospace;
+            margin-top: 0.3rem;
+            opacity: 0.6;
+            letter-spacing: -0.2px;
+        }
+
+        /* input area */
+        .input-area {
+            background: #0f0f0f;
+            border-top: 1px solid #1e1e1e;
+            padding: 1.2rem 1.5rem;
+            display: flex;
+            gap: 0.8rem;
+            align-items: flex-end;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            background: #111111;
+            border: 1px solid #2a2a2a;
+            border-radius: 2rem;
+            padding: 0.5rem 1rem;
+            transition: border 0.2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #c8ff00;
+        }
+
+        #replyInput {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #f0f0f0;
+            font-family: inherit;
+            font-size: 0.95rem;
+            padding: 0.6rem 0;
+            outline: none;
+            resize: none;
+        }
+
+        #replyInput::placeholder {
+            color: #5a5a5a;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        button {
+            background: #c8ff00;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 2rem;
+            font-family: 'Space Mono', monospace;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #0a0a0a;
+            cursor: pointer;
+            transition: 0.1s linear;
+            letter-spacing: 0.3px;
+        }
+
+        button:hover {
+            background: #b3e600;
+            transform: scale(0.97);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        /* completion card */
+        .completion-card {
+            margin-top: 1rem;
+            background: #121212;
+            border: 1px solid #2c2c2c;
+            border-radius: 1rem;
+            padding: 1.4rem 1.6rem;
+            width: 100%;
+            animation: fadeIn 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        .state-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            border-left: 4px solid;
+            padding-left: 0.8rem;
+        }
+
+        .state-title {
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+        }
+
+        .state-score {
+            font-family: monospace;
+            font-size: 0.8rem;
+            background: #1a1a1a;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+        }
+
+        .summary-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            margin: 1rem 0;
+        }
+
+        .summary-item {
+            border-bottom: 1px dashed #2a2a2a;
+            padding-bottom: 0.6rem;
+        }
+
+        .summary-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #c8ff00;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-text {
+            font-size: 0.9rem;
+            margin-top: 0.2rem;
+            color: #dddddd;
+            line-height: 1.4;
+        }
+
+        .options-list {
+            list-style: none;
+            padding-left: 0.5rem;
+            margin-top: 0.3rem;
+        }
+        .options-list li {
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
+            font-family: monospace;
+        }
+
+        hr {
+            border-color: #252525;
+            margin: 0.6rem 0;
+        }
+
+        .disabled-input-overlay {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* scroll */
+        .chat-container::-webkit-scrollbar {
+            width: 5px;
+        }
+        .chat-container::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        .chat-container::-webkit-scrollbar-thumb {
+            background: #c8ff00;
+        }
+
+        @keyframes fadeSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            font-family: monospace;
+        }
+
+        .empty-chat {
+            text-align: center;
+            margin-top: 3rem;
+            opacity: 0.6;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+<header class="incident-header">
+    <div class="title-section">
+        <h1>ASCEND // incident #{{ incident.id }}</h1>
+        <div class="pillar-tag">
+            PILLAR: {{ incident.pillar | upper }}
+        </div>
+    </div>
+    <div class="meta-badge">
+        {{ incident.date }} · {{ incident.time }}
+        {% if incident.is_complete %}
+            <span style="color:#c8ff00; margin-left: 8px;">✓ COMPLETE</span>
+        {% else %}
+            <span style="color:#888;">active</span>
+        {% endif %}
+    </div>
+</header>
+
+<div class="chat-container" id="chatContainer">
+    <!-- messages injected dynamically -->
+    <div id="messagesWrapper" class="messages-wrapper"></div>
+</div>
+
+<div class="input-area" id="inputArea">
+    <div class="input-wrapper">
+        <textarea id="replyInput" rows="1" placeholder="> type your response..." disabled="{{ 'true' if incident.is_complete else 'false' }}"></textarea>
+    </div>
+    <button id="sendBtn" {% if incident.is_complete %}disabled{% endif %}>SEND</button>
+</div>
+
+<script>
+    // Jinja2 variables injected
+    const incidentData = {{ incident | tojson }};
+    const conversationRaw = incidentData.conversation;   // can be JSON string or already parsed
+    let conversationHistory = [];
+
+    // DOM elements
+    const chatContainer = document.getElementById('chatContainer');
+    const messagesWrapper = document.getElementById('messagesWrapper');
+    const replyInput = document.getElementById('replyInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const inputAreaDiv = document.getElementById('inputArea');
+
+    let isCompleted = incidentData.is_complete === true;
+    let waitingForResponse = false;   // debounce / prevent double submit
+
+    // ---------- helper: render all messages from conversationHistory ----------
+    function renderMessages() {
+        if (!messagesWrapper) return;
+        messagesWrapper.innerHTML = '';
+        if (!conversationHistory.length) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'empty-chat';
+            emptyDiv.innerText = '⟡ no messages yet. start the conversation ⟡';
+            messagesWrapper.appendChild(emptyDiv);
+            return;
+        }
+
+        conversationHistory.forEach(msg => {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${msg.role === 'user' ? 'user' : 'ai'}`;
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'bubble';
+            bubbleDiv.innerText = msg.content;
+
+            const metaSpan = document.createElement('div');
+            metaSpan.className = 'message-meta';
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' });
+            metaSpan.innerText = msg.role === 'user' ? `you · ${timeStr}` : `ascend · ${timeStr}`;
+            
+            msgDiv.appendChild(bubbleDiv);
+            msgDiv.appendChild(metaSpan);
+            messagesWrapper.appendChild(msgDiv);
+        });
+
+        // scroll to bottom
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // ---------- add message to conversation (internal) ----------
+    function addMessageToUI(role, content) {
+        conversationHistory.push({ role, content });
+        renderMessages();
+    }
+
+    // ---------- show completion card (state + summary) ----------
+    function showCompletionCard(stateCode, summaryObj) {
+        // state code mapping
+        let stateMeta = {
+            1: { label: 'STATE 1 · unaware, not resisting', color: '#808080', desc: 'Needs education' },
+            2: { label: 'STATE 2 · confused + avoiding', color: '#ff8c42', desc: 'Needs attention' },
+            3: { label: 'STATE 3 · knows but won’t act', color: '#e34234', desc: 'most dangerous' },
+            4: { label: 'STATE 4 · growth state', color: '#3cb371', desc: 'knows and executes' }
+        };
+        const meta = stateMeta[stateCode] || stateMeta[1];
+        
+        // build summary from response
+        const situation = summaryObj.situation || '—';
+        const options = summaryObj.options || [];
+        const choice = summaryObj.choice || '—';
+        const resistance = summaryObj.resistance || '—';
+        const clarityGap = summaryObj.clarity_gap || '—';
+        const resistanceScore = summaryObj.resistance_score !== undefined ? summaryObj.resistance_score : '—';
+        
+        const card = document.createElement('div');
+        card.className = 'completion-card';
+        card.style.borderTop = `3px solid ${meta.color}`;
+        
+        card.innerHTML = `
+            <div class="state-header" style="border-left-color: ${meta.color};">
+                <span class="state-title" style="color: ${meta.color};">${meta.label}</span>
+                <span class="state-score">RESISTANCE SCORE: ${resistanceScore}</span>
+            </div>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-label">SITUATION</div>
+                    <div class="summary-text">${escapeHtml(situation)}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">OPTIONS</div>
+                    <div class="summary-text"><ul class="options-list">${options.map(opt => `<li>⟡ ${escapeHtml(opt)}</li>`).join('') || '<li>—</li>'}</ul></div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">SELECTED CHOICE</div>
+                    <div class="summary-text">${escapeHtml(choice)}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">RESISTANCE PATTERN</div>
+                    <div class="summary-text">${escapeHtml(resistance)}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">CLARITY GAP</div>
+                    <div class="summary-text">${escapeHtml(clarityGap)}</div>
+                </div>
+            </div>
+            <hr />
+            <div style="font-size:0.75rem; font-family: 'Space Mono', monospace; color: #c8ff00;">✦ session finalized · insights recorded</div>
+        `;
+        
+        // remove any existing completion card
+        const existingCard = document.querySelector('.completion-card');
+        if (existingCard) existingCard.remove();
+        
+        messagesWrapper.appendChild(card);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        
+        // disable input + button
+        isCompleted = true;
+        replyInput.disabled = true;
+        sendBtn.disabled = true;
+        inputAreaDiv.classList.add('disabled-input-overlay');
+    }
+    
+    // simple escape to avoid XSS
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+    
+    // ---------- send message to /chat_incident ----------
+    async function sendMessageToAI(userMessage) {
+        if (waitingForResponse) return;
+        if (!userMessage.trim()) return;
+        if (isCompleted) return;
+        
+        waitingForResponse = true;
+        sendBtn.disabled = true;
+        replyInput.disabled = true;
+        
+        // add user message to UI instantly
+        addMessageToUI('user', userMessage.trim());
+        replyInput.value = '';
+        autoResizeTextarea(); // reset height
+        
+        try {
+            const payload = {
+                incident_id: incidentData.id,
+                message: userMessage.trim()
+            };
+            
+            const response = await fetch('/chat_incident', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            // handle response structure:
+            // { complete: false, message: "next question" }
+            // OR { complete: true, state_code: 1-4, summary: { situation, options, choice, resistance, clarity_gap, resistance_score } }
+            
+            if (data.complete === true) {
+                // session complete: show AI final message if exists? Usually backend may send final question? but we show summary card
+                // sometimes there might be a final AI message before completion flag. we add it if 'message' field present.
+                if (data.message && typeof data.message === 'string' && data.message.trim() !== '') {
+                    addMessageToUI('ai', data.message);
+                }
+                // now display completion card with state & summary
+                const stateCode = data.state_code || 1;
+                const summary = data.summary || {
+                    situation: '—',
+                    options: [],
+                    choice: '—',
+                    resistance: '—',
+                    clarity_gap: '—',
+                    resistance_score: 0
+                };
+                showCompletionCard(stateCode, summary);
+            } 
+            else {
+                // incomplete, just add AI message
+                if (data.message && typeof data.message === 'string') {
+                    addMessageToUI('ai', data.message);
+                } else {
+                    // fallback
+                    addMessageToUI('ai', '[system] continue the reflection.');
+                }
+                // re-enable input
+                replyInput.disabled = false;
+                sendBtn.disabled = false;
+                replyInput.focus();
+            }
+        } catch (err) {
+            console.error('ASCEND chat error:', err);
+            addMessageToUI('ai', '⚠️ connection error. please try again.');
+            // re-enable input but keep careful
+            if (!isCompleted) {
+                replyInput.disabled = false;
+                sendBtn.disabled = false;
+                replyInput.focus();
+            }
+        } finally {
+            waitingForResponse = false;
+            if (!isCompleted) {
+                // ensure if completed we don't override
+                if (replyInput.disabled === true && !isCompleted) {
+                    replyInput.disabled = false;
+                    sendBtn.disabled = false;
+                }
+            }
+            autoResizeTextarea();
+        }
+    }
+    
+    // ---------- parse conversation from Jinja ----------
+    function initializeConversation() {
+        // incident.conversation can be a JSON string (stored) OR already a list
+        let parsedConv = [];
+        if (conversationRaw) {
+            try {
+                if (typeof conversationRaw === 'string') {
+                    parsedConv = JSON.parse(conversationRaw);
+                } else if (Array.isArray(conversationRaw)) {
+                    parsedConv = conversationRaw;
+                } else if (typeof conversationRaw === 'object') {
+                    // fallback: maybe it's an object with messages
+                    parsedConv = conversationRaw.messages || [];
+                }
+            } catch(e) {
+                console.warn('failed to parse conversation, start fresh', e);
+                parsedConv = [];
+            }
+        }
+        
+        // ensure each message has role/content structure
+        if (Array.isArray(parsedConv) && parsedConv.length) {
+            conversationHistory = parsedConv.map(msg => {
+                if (typeof msg === 'string') return { role: 'ai', content: msg }; // legacy fallback
+                return { role: msg.role || 'ai', content: msg.content || msg.message || '' };
+            }).filter(m => m.content);
+        } else {
+            // no prior messages — maybe we need a starter from the backend? But UI can still wait for user.
+            // Optionally add default starter? But backend will respond to first message. Keep empty.
+            conversationHistory = [];
+        }
+        
+        // if the incident is already completed, we might need to show completion card based on backend data?
+        // Flask route indicates is_complete flag. but we need to retrieve summary? The backend might not send summary on page load.
+        // We will check if is_complete === true and conversation ended, but we might need to call a special endpoint? 
+        // For safety: if incident.is_complete === true, we disable input and show a placeholder card? But the card needs state_code + summary.
+        // However the design spec says "on load, parse messages and display existing messages". The completion card should only appear after POST returns complete.
+        // But if the incident was previously completed, we should still disable input and maybe fetch summary? To respect UX, we'll add an indicator.
+        // Option: show a minimal static card that says "completed analysis" but no detailed summary? We can instead make a small bar.
+        // Better: on load, if is_complete is true, we try to retrieve summary via a GET? Not specified. We'll just show a disabled message.
+        // To be robust: we call a dummy? Actually, I'll add an extra GET endpoint? Not in spec. So I'll show a simple "session finalized" banner.
+        if (isCompleted) {
+            replyInput.disabled = true;
+            sendBtn.disabled = true;
+            inputAreaDiv.classList.add('disabled-input-overlay');
+            // show a final note that incident is closed without stats? but it's better than nothing.
+            const finalNote = document.createElement('div');
+            finalNote.className = 'completion-card';
+            finalNote.style.opacity = '0.9';
+            finalNote.style.borderLeft = '3px solid #c8ff00';
+            finalNote.innerHTML = `<div style="font-family: 'Space Mono'; color:#c8ff00;">✦ INCIDENT CLOSED ✦</div><div style="margin-top:8px; font-size:0.85rem;">This behavioral analysis is marked complete. No further replies accepted.</div>`;
+            // but ensure we don't duplicate on re-render
+            setTimeout(() => {
+                if (!document.querySelector('.completion-card')) {
+                    messagesWrapper.appendChild(finalNote);
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }
+            }, 50);
+        }
+        
+        renderMessages();
+    }
+    
+    // textarea auto-resize
+    function autoResizeTextarea() {
+        if (replyInput) {
+            replyInput.style.height = 'auto';
+            replyInput.style.height = Math.min(replyInput.scrollHeight, 120) + 'px';
+        }
+    }
+    
+    // event binding
+    function bindEvents() {
+        if (sendBtn) {
+            sendBtn.addEventListener('click', () => {
+                if (isCompleted || waitingForResponse) return;
+                const msg = replyInput.value.trim();
+                if (msg) sendMessageToAI(msg);
+            });
+        }
+        if (replyInput) {
+            replyInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!isCompleted && !waitingForResponse && replyInput.value.trim()) {
+                        sendMessageToAI(replyInput.value.trim());
+                    }
+                }
+            });
+            replyInput.addEventListener('input', autoResizeTextarea);
+        }
+    }
+    
+    // if incident is not completed, focus input after loading
+    function initialFocus() {
+        if (!isCompleted && replyInput && !replyInput.disabled) {
+            replyInput.focus();
+        }
+    }
+    
+    // handle dynamic scroll after each render
+    const observer = new MutationObserver(() => {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    });
+    observer.observe(messagesWrapper, { childList: true, subtree: true, characterData: true });
+    
+    // Start
+    initializeConversation();
+    bindEvents();
+    autoResizeTextarea();
+    initialFocus();
+    
+    // extra: if conversationHistory is empty and incident is not completed, we could optionally show a placeholder greeting from AI? 
+    // but backend will respond when user sends first message. No auto-greeting needed to follow backend-driven flow.
+    // However for a polished experience, we can show a subtle prompt.
+    if (!isCompleted && conversationHistory.length === 0) {
+        // we do NOT auto-send anything, but we add an instructional tip? but better to keep clean.
+        const tip = document.createElement('div');
+        tip.className = 'empty-chat';
+        tip.style.marginTop = '0';
+        tip.style.fontSize = '0.75rem';
+        tip.style.fontFamily = 'Space Mono';
+        tip.innerText = '↳ type your reply below to begin the analysis.';
+        messagesWrapper.appendChild(tip);
+        setTimeout(() => {
+            if (tip.parentNode) tip.remove();
+        }, 4000);
+    }
+</script>
+</body>
+</html>

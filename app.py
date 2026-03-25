@@ -19,58 +19,40 @@ init_db()
 GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
 GROQ_MODEL = 'llama-3.3-70b-versatile'
 
-# SHADOW personality — used for all incident conversations
-SHADOW_SYSTEM_PROMPT = """
-You are SHADOW — the internal voice of ASCEND, a brutal self-analysis system.
-Your job is to extract 4 specific things from the user about a behavioral incident:
-1. The exact situation (what happened)
-2. What options were available to them
-3. What they actually chose and why
-4. Why they didn't choose the better option — this is the most important part.
-   Sometimes they didn't know the better option existed (clarity gap).
-   Sometimes they knew but still avoided it (resistance).
-
-Rules:
-- Ask only ONE question at a time. Never list multiple questions.
-- Be direct, sharp, honest. Like a smart friend — not a therapist, not a form.
-- No sugarcoating. No generic encouragement.
-- Keep questions short. Make them feel like a real conversation.
-- Once you have all 4 elements clearly, respond with EXACTLY this JSON and nothing else:
-
-{
-  "complete": true,
-  "situation": "...",
-  "options_available": "...",
-  "choice_made": "...",
-  "resistance_reason": "...",
-  "clarity_gap": <1-5>,
-  "resistance_score": <1-5>
-}
-
-clarity_gap: How aware were they of the better option? 1=fully aware, 5=had no idea
-resistance_score: Did they act on what they knew? 1=executed cleanly, 5=knew but completely avoided
-
-Do not output the JSON until you genuinely have all 4 elements from the conversation.
-"""
+def call_groq(messages, max_tokens=400):
+    groq_api_key = os.getenv('GROQ_API_KEY')
+    response = requests.post(
+        GROQ_URL,
+        headers={
+            'Authorization': f'Bearer {groq_api_key}',
+            'Content-Type': 'application/json'
+        },
+        json={
+            'model': GROQ_MODEL,
+            'messages': messages,
+            'max_tokens': max_tokens
+        }
+    )
+    result = response.json()
+    return result.get('choices', [{}])[0].get('message', {}).get('content', '')
 
 
-# ── V1 ROUTES (untouched) ───────────────────────────────────────────────────────
+# ── V1 ROUTES (untouched) ──────────────────────────────────────────────────────
 
-# When user goes to / show home screen
+# when user go to / show home screen
 @app.route('/')
 def home():
     return render_template('home.html')
 
-# When user goes to checkin show checkin page
+# when user go to checkin show checkin page
 @app.route('/checkin')
 def checkin():
     return render_template('checkin.html')
 
-# When user goes to analyze reply with groq api feedback
+# when user go to analyze reply to the user with groq api key
 @app.route('/analyze', methods=['POST'])
 def analyze():
     data = request.get_json()
-    groq_api_key = os.getenv('GROQ_API_KEY')
 
     quick_logs = get_today_quicklogs()
     quick_log_text = ""
@@ -96,21 +78,7 @@ Analyze patterns across ALL entries including quick logs. Call out weaknesses di
 For each weakness — give one specific action they should have taken instead. Be direct and practical. No theory.
 """
 
-    response = requests.post(
-        GROQ_URL,
-        headers={
-            'Authorization': f'Bearer {groq_api_key}',
-            'Content-Type': 'application/json'
-        },
-        json={
-            'model': GROQ_MODEL,
-            'messages': [{'role': 'user', 'content': prompt}],
-            'max_tokens': 300
-        }
-    )
-
-    result = response.json()
-    feedback = result.get('choices', [{}])[0].get('message', {}).get('content', str(result))
+    feedback = call_groq([{'role': 'user', 'content': prompt}], max_tokens=300)
 
     save_checkin(
         data['awareness'], data['strategy'], data['cognition'],
@@ -119,7 +87,7 @@ For each weakness — give one specific action they should have taken instead. B
     )
     return jsonify({'feedback': feedback})
 
-# When user submits a quick log save it
+# saves a quick log entry to the database
 @app.route('/quicklog', methods=['POST'])
 def quicklog():
     data = request.get_json()
@@ -129,13 +97,13 @@ def quicklog():
     save_quicklog(pillar, note)
     return jsonify({'status': 'saved'})
 
-# Fetch today's quick logs
+# fetches today's quick logs
 @app.route('/getlogs')
 def getlogs():
     logs = get_today_quicklogs()
     return jsonify({'logs': logs})
 
-# Fetch yesterday's check-in data so checkin page can show personalized questions
+# fetches yesterday's check-in data so check-in page can show personalized questions
 @app.route('/get_context')
 def get_context():
     last = get_last_checkin()
@@ -192,12 +160,12 @@ TRACK4_VISIBILITY = [
 
 career_progress = load_career_progress()
 
-# When user goes to /career show career page
+# when user go to /career show him career page
 @app.route('/career')
 def career():
     return render_template('career.html')
 
-# Give mission according to user's progression
+# give mission according to progression
 @app.route('/get_mission')
 def get_mission():
     t1 = career_progress["track1"]
@@ -219,11 +187,10 @@ def get_mission():
         'visibility': visibility['task']
     })
 
-# Submit career mission response and get Groq feedback
+# submit career mission response and get groq feedback
 @app.route('/career_submit', methods=['POST'])
 def career_submit():
     data = request.get_json()
-    groq_api_key = os.getenv('GROQ_API_KEY')
 
     t1 = career_progress["track1"]
     t2 = career_progress["track2"]
@@ -252,66 +219,93 @@ Give brutally honest assessment. Call out if skipped.
 End with one specific tip for tomorrow based on today's performance.
 """
 
-    response = requests.post(
-        GROQ_URL,
-        headers={
-            'Authorization': f'Bearer {groq_api_key}',
-            'Content-Type': 'application/json'
-        },
-        json={
-            'model': GROQ_MODEL,
-            'messages': [{'role': 'user', 'content': prompt}],
-            'max_tokens': 300
-        }
+    feedback = call_groq([{'role': 'user', 'content': prompt}], max_tokens=300)
+    save_career_progress(
+        career_progress['track1'], career_progress['track2'],
+        career_progress['track3'], career_progress['track4']
     )
-
-    result = response.json()
-    feedback = result.get('choices', [{}])[0].get('message', {}).get('content', str(result))
-    save_career_progress(career_progress['track1'], career_progress['track2'], career_progress['track3'], career_progress['track4'])
     return jsonify({'feedback': feedback})
 
 
-# ── V2 INCIDENT ROUTES ──────────────────────────────────────────────────────────
+# ── V2 ROUTES ─────────────────────────────────────────────────────────────────
+
+# SHADOW's personality — used in every incident conversation
+SHADOW_SYSTEM_PROMPT = """
+You are SHADOW — the internal voice inside ASCEND, a personal behavioral intelligence system.
+Your job: extract 4 things from every incident the user logs — Situation, Options, Choice, Resistance.
+
+PERSONALITY:
+- Direct, sharp, zero fluff. Like a smart friend who doesn't let you off the hook.
+- Never a therapist. Never a cheerleader. Never preachy.
+- Ask one question at a time. Short. Pointed.
+- Sound human, not like a form.
+
+YOUR GOAL PER CONVERSATION:
+You need to extract these 4 elements through natural back-and-forth:
+1. SITUATION   — what actually happened (context + facts)
+2. OPTIONS     — what choices were available (including ones they didn't see)
+3. CHOICE      — what they picked and why
+4. RESISTANCE  — why they didn't pick the better option (were they unaware it existed, or knew but avoided it?)
+
+RULES:
+- Ask only ONE follow-up question per turn.
+- Don't list questions. Don't number them. Just ask the next most important thing.
+- Once you have all 4 elements clearly, respond with the JSON block below and nothing else.
+- Do NOT ask for scores — you will infer them from what the user tells you.
+
+WHEN YOU HAVE ALL 4 ELEMENTS, respond ONLY with this JSON and nothing else:
+{
+  "complete": true,
+  "situation": "...",
+  "options_available": "...",
+  "choice_made": "...",
+  "resistance_reason": "...",
+  "clarity_gap": <1-5>,
+  "resistance_score": <1-5>
+}
+
+clarity_gap scale  : 1 = fully aware of options, 5 = had no idea better options existed
+resistance_score   : 1 = executed on what they knew, 5 = knew the right thing, still avoided it
+"""
+
+# Renders the conversation page for a given incident ID
+# This is the dedicated page user lands on after logging an incident
+@app.route('/incident/<int:incident_id>')
+def incident_page(incident_id):
+    incident = get_incident_by_id(incident_id)
+    if not incident:
+        return "Incident not found", 404
+    return render_template('incident.html', incident=incident)
 
 # Called when user submits a new incident from Quick Log
-# Creates the incident in DB and returns the first AI question
+# Creates the incident in DB, sends first AI question, returns incident_id + first message
 @app.route('/start_incident', methods=['POST'])
 def start_incident():
     data = request.get_json()
-    pillar = data.get('pillar', 'awareness')
-    note = data.get('note', '')
-    groq_api_key = os.getenv('GROQ_API_KEY')
+    pillar = data.get('pillar', 'general')
+    note = data.get('note', '').strip()
 
-    # Save incomplete incident to DB, get its ID
+    if not note:
+        return jsonify({'error': 'No incident text provided'}), 400
+
+    # Save incomplete incident to DB, get ID
     incident_id = create_incident(pillar, note)
 
-    # Build initial conversation — user's raw note is the first message
-    conversation = [
-        {'role': 'user', 'content': note}
+    # Build first AI message — read the incident, ask first follow-up
+    messages = [
+        {'role': 'system', 'content': SHADOW_SYSTEM_PROMPT},
+        {'role': 'user', 'content': f"[PILLAR: {pillar.upper()}]\n{note}"}
     ]
 
-    # Ask Groq for the first follow-up question
-    response = requests.post(
-        GROQ_URL,
-        headers={
-            'Authorization': f'Bearer {groq_api_key}',
-            'Content-Type': 'application/json'
-        },
-        json={
-            'model': GROQ_MODEL,
-            'messages': [
-                {'role': 'system', 'content': SHADOW_SYSTEM_PROMPT},
-                {'role': 'user', 'content': note}
-            ],
-            'max_tokens': 150
-        }
-    )
+    first_question = call_groq(messages, max_tokens=150)
 
-    result = response.json()
-    ai_reply = result.get('choices', [{}])[0].get('message', {}).get('content', '')
+    # Save this opening exchange to conversation history
+    conversation = [
+        {'role': 'user', 'content': note},
+        {'role': 'assistant', 'content': first_question}
+    ]
 
-    # Save conversation so far to incident
-    conversation.append({'role': 'assistant', 'content': ai_reply})
+    # Update incident with initial conversation (still incomplete)
     from database import get_conn
     conn = get_conn()
     c = conn.cursor()
@@ -324,80 +318,83 @@ def start_incident():
 
     return jsonify({
         'incident_id': incident_id,
-        'ai_question': ai_reply,
-        'complete': False
+        'message': first_question
     })
 
-
-# Called on every user reply during the incident conversation
-# Either asks the next question OR extracts all 4 elements and saves them
-@app.route('/continue_incident', methods=['POST'])
-def continue_incident():
+# Called on every user reply inside the conversation page
+# Continues the AI conversation, detects when all 4 elements are extracted
+@app.route('/chat_incident', methods=['POST'])
+def chat_incident():
     data = request.get_json()
     incident_id = data.get('incident_id')
-    user_message = data.get('message', '')
-    groq_api_key = os.getenv('GROQ_API_KEY')
+    user_message = data.get('message', '').strip()
 
-    # Load existing conversation for this incident
+    if not incident_id or not user_message:
+        return jsonify({'error': 'Missing incident_id or message'}), 400
+
     incident = get_incident_by_id(incident_id)
     if not incident:
         return jsonify({'error': 'Incident not found'}), 404
 
-    conversation = json.loads(incident['conversation'])
+    if incident['is_complete']:
+        return jsonify({'error': 'This incident is already complete'}), 400
 
-    # Add user's new message to conversation
+    # Load existing conversation history
+    conversation = json.loads(incident['conversation'] or '[]')
+
+    # Append new user message
     conversation.append({'role': 'user', 'content': user_message})
 
-    # Build messages for Groq — system prompt + full conversation history
-    messages = [{'role': 'system', 'content': SHADOW_SYSTEM_PROMPT}] + conversation
+    # Build full message list for Groq: system + full history
+    messages = [{'role': 'system', 'content': SHADOW_SYSTEM_PROMPT}]
+    # Add pillar context at start of conversation
+    messages.append({
+        'role': 'user',
+        'content': f"[PILLAR: {incident['pillar'].upper()}]\n{incident['situation']}"
+    })
+    # Add all conversation turns after the first user message
+    for turn in conversation[1:]:
+        messages.append(turn)
 
-    response = requests.post(
-        GROQ_URL,
-        headers={
-            'Authorization': f'Bearer {groq_api_key}',
-            'Content-Type': 'application/json'
-        },
-        json={
-            'model': GROQ_MODEL,
-            'messages': messages,
-            'max_tokens': 300
-        }
-    )
+    ai_response = call_groq(messages, max_tokens=300)
 
-    result = response.json()
-    ai_reply = result.get('choices', [{}])[0].get('message', {}).get('content', '')
-
-    # Check if Groq returned the completion JSON
+    # Check if AI returned the completion JSON
     try:
-        # Try to parse the reply as JSON — means AI has all 4 elements
-        parsed = json.loads(ai_reply)
-        if parsed.get('complete'):
-            # Save all extracted structured data to the incident
-            state_code = update_incident(
-                incident_id,
-                parsed.get('situation', ''),
-                parsed.get('options_available', ''),
-                parsed.get('choice_made', ''),
-                parsed.get('resistance_reason', ''),
-                parsed.get('clarity_gap', 3),
-                parsed.get('resistance_score', 3),
-                json.dumps(conversation)
-            )
-            return jsonify({
-                'complete': True,
-                'state_code': state_code,
-                'situation': parsed.get('situation', ''),
-                'clarity_gap': parsed.get('clarity_gap'),
-                'resistance_score': parsed.get('resistance_score')
-            })
-    except (json.JSONDecodeError, TypeError):
-        # Not JSON — AI is still asking questions
+        # Strip any text around the JSON if present
+        json_start = ai_response.find('{')
+        json_end = ai_response.rfind('}') + 1
+        if json_start != -1 and json_end > json_start:
+            extracted = json.loads(ai_response[json_start:json_end])
+            if extracted.get('complete'):
+                # Save all 4 elements, mark incident complete
+                state_code = update_incident(
+                    incident_id,
+                    extracted['situation'],
+                    extracted['options_available'],
+                    extracted['choice_made'],
+                    extracted['resistance_reason'],
+                    extracted['clarity_gap'],
+                    extracted['resistance_score'],
+                    json.dumps(conversation)
+                )
+                return jsonify({
+                    'complete': True,
+                    'state_code': state_code,
+                    'summary': {
+                        'situation': extracted['situation'],
+                        'options': extracted['options_available'],
+                        'choice': extracted['choice_made'],
+                        'resistance': extracted['resistance_reason'],
+                        'clarity_gap': extracted['clarity_gap'],
+                        'resistance_score': extracted['resistance_score'],
+                    }
+                })
+    except (json.JSONDecodeError, KeyError, ValueError):
         pass
 
-    # Still in conversation — save updated conversation and return next question
-    conversation.append({'role': 'assistant', 'content': ai_reply})
+    # Not complete yet — save updated conversation and return next question
+    conversation.append({'role': 'assistant', 'content': ai_response})
 
-    from database import get_conn
     conn = get_conn()
     c = conn.cursor()
     database_url = os.getenv('DATABASE_URL')
@@ -409,20 +406,156 @@ def continue_incident():
 
     return jsonify({
         'complete': False,
-        'ai_question': ai_reply
+        'message': ai_response
     })
 
+# Smart Check-in V2
+# Step 1: returns missing pillars + first question for the first missing one
+# Step 2: handles answers, logs incidents, moves to next missing pillar
+# Step 3: once all pillars covered, generates day summary
+@app.route('/checkin_v2', methods=['POST'])
+def checkin_v2():
+    data = request.get_json()
+    action = data.get('action')
 
-# Called by Check-in page to know which pillars are missing today
-# Also returns today's incidents summary for the debrief
-@app.route('/checkin_context', methods=['GET'])
-def checkin_context():
-    missing = get_missing_pillars_today()
-    incidents = get_today_incidents()
+    # action: 'start' — user opens check-in, get missing pillars
+    if action == 'start':
+        missing = get_missing_pillars_today()
+        today_incidents = get_today_incidents()
+
+        if not missing and not today_incidents:
+            return jsonify({
+                'phase': 'empty_day',
+                'message': "You logged nothing today. What actually happened?"
+            })
+
+        if missing:
+            first_missing = missing[0]
+            question = call_groq([
+                {'role': 'system', 'content': SHADOW_SYSTEM_PROMPT},
+                {'role': 'user', 'content': (
+                    f"The user has NOT logged anything for the {first_missing.upper()} pillar today. "
+                    f"Ask them one sharp question about why they didn't work on {first_missing} today. "
+                    f"Focus on what got in the way — the resistance. Keep it short and direct."
+                )}
+            ], max_tokens=100)
+
+            return jsonify({
+                'phase': 'gap_fill',
+                'missing_pillars': missing,
+                'current_pillar': first_missing,
+                'message': question
+            })
+
+        # All pillars covered — go straight to summary
+        return _generate_day_summary(today_incidents)
+
+    # action: 'answer' — user responded to a missing pillar question
+    # Create an incident from this answer and move to next pillar
+    elif action == 'answer':
+        pillar = data.get('pillar')
+        answer = data.get('answer', '').strip()
+        remaining = data.get('remaining_pillars', [])
+
+        if answer and pillar:
+            # Start a proper incident conversation for this answer
+            incident_id = create_incident(pillar, answer)
+
+            # Quick single-turn extraction for check-in context
+            # (user can do full conversation if they want more depth)
+            extraction_prompt = f"""
+The user answered about {pillar.upper()} during end-of-day check-in.
+Their response: "{answer}"
+
+Extract what you can and return the completion JSON immediately.
+If resistance is clear from the answer, score it. If not, use middle scores (3).
+Always return the JSON — this is a quick check-in, not a deep conversation.
+"""
+            messages = [
+                {'role': 'system', 'content': SHADOW_SYSTEM_PROMPT},
+                {'role': 'user', 'content': extraction_prompt}
+            ]
+            ai_response = call_groq(messages, max_tokens=300)
+
+            try:
+                json_start = ai_response.find('{')
+                json_end = ai_response.rfind('}') + 1
+                if json_start != -1:
+                    extracted = json.loads(ai_response[json_start:json_end])
+                    if extracted.get('complete'):
+                        update_incident(
+                            incident_id,
+                            extracted['situation'],
+                            extracted['options_available'],
+                            extracted['choice_made'],
+                            extracted['resistance_reason'],
+                            extracted['clarity_gap'],
+                            extracted['resistance_score'],
+                            json.dumps([{'role': 'user', 'content': answer}])
+                        )
+            except (json.JSONDecodeError, KeyError, ValueError):
+                pass  # Incident stays incomplete — not fatal
+
+        # Move to next missing pillar
+        if remaining:
+            next_pillar = remaining[0]
+            next_remaining = remaining[1:]
+
+            question = call_groq([
+                {'role': 'system', 'content': SHADOW_SYSTEM_PROMPT},
+                {'role': 'user', 'content': (
+                    f"Ask one sharp question about why the user didn't work on "
+                    f"{next_pillar.upper()} today. What was the resistance? Short and direct."
+                )}
+            ], max_tokens=100)
+
+            return jsonify({
+                'phase': 'gap_fill',
+                'missing_pillars': remaining,
+                'current_pillar': next_pillar,
+                'remaining_pillars': next_remaining,
+                'message': question
+            })
+
+        # All missing pillars answered — generate summary
+        today_incidents = get_today_incidents()
+        return _generate_day_summary(today_incidents)
+
+    return jsonify({'error': 'Invalid action'}), 400
+
+
+def _generate_day_summary(incidents):
+    """Internal helper — generates end-of-day summary from all today's incidents."""
+    if not incidents:
+        return jsonify({
+            'phase': 'summary',
+            'message': "Nothing logged today. Tomorrow, log at least one real incident."
+        })
+
+    incident_text = ""
+    for i in incidents:
+        incident_text += f"\n[{i['pillar'].upper()}] {i['situation'] or 'No detail'}"
+        incident_text += f"\n  Choice: {i['choice_made'] or '—'}"
+        incident_text += f"\n  Resistance: {i['resistance_reason'] or '—'}"
+        incident_text += f"\n  State: {i['state_code']} | Clarity Gap: {i['clarity_gap']} | Resistance: {i['resistance_score']}\n"
+
+    summary_prompt = f"""
+You are SHADOW — end-of-day debrief for ASCEND user.
+Here are today's logged incidents:
+{incident_text}
+
+Give a 4-5 line brutally honest summary:
+- What pattern is showing up today?
+- Which pillar is the biggest problem?
+- One specific thing to fix tomorrow.
+No motivation. No padding. Be direct.
+"""
+
+    summary = call_groq([{'role': 'user', 'content': summary_prompt}], max_tokens=250)
 
     return jsonify({
-        'missing_pillars': missing,
-        'incidents_today': len(incidents),
+        'phase': 'summary',
+        'message': summary,
         'incidents': incidents
     })
 
