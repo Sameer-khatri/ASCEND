@@ -341,7 +341,7 @@
 
 <div class="input-area" id="inputArea">
     <div class="input-wrapper">
-        <textarea id="replyInput" rows="1" placeholder="> type your response..." disabled="{{ 'true' if incident.is_complete else 'false' }}"></textarea>
+        <textarea id="replyInput" rows="1" placeholder="> type your response..."></textarea>
     </div>
     <button id="sendBtn" {% if incident.is_complete %}disabled{% endif %}>SEND</button>
 </div>
@@ -414,7 +414,8 @@
         
         // build summary from response
         const situation = summaryObj.situation || '—';
-        const options = summaryObj.options || [];
+        console.log('SUMMARY OBJ:', JSON.stringify(summaryObj));
+        const options = typeof summaryObj.options === 'string' ? [summaryObj.options] : (Array.isArray(summaryObj.options) ? summaryObj.options : []);
         const choice = summaryObj.choice || '—';
         const resistance = summaryObj.resistance || '—';
         const clarityGap = summaryObj.clarity_gap || '—';
@@ -436,7 +437,7 @@
                 </div>
                 <div class="summary-item">
                     <div class="summary-label">OPTIONS</div>
-                    <div class="summary-text"><ul class="options-list">${options.map(opt => `<li>⟡ ${escapeHtml(opt)}</li>`).join('') || '<li>—</li>'}</ul></div>
+                    <div class="summary-text">${escapeHtml(typeof summaryObj.options === 'string' ? summaryObj.options : JSON.stringify(summaryObj.options) || '—')}</div>
                 </div>
                 <div class="summary-item">
                     <div class="summary-label">SELECTED CHOICE</div>
@@ -470,18 +471,16 @@
     }
     
     // simple escape to avoid XSS
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-            return c;
-        });
-    }
-    
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    str = String(str);
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
     // ---------- send message to /chat_incident ----------
     async function sendMessageToAI(userMessage) {
         if (waitingForResponse) return;
@@ -552,7 +551,7 @@
             }
         } catch (err) {
             console.error('ASCEND chat error:', err);
-            addMessageToUI('ai', '⚠️ connection error. please try again.');
+            addMessageToUI('ai', '⚠️ connection error: ' + err.message);
             // re-enable input but keep careful
             if (!isCompleted) {
                 replyInput.disabled = false;

@@ -7,7 +7,7 @@ from database import (
     init_db, save_checkin, get_last_checkin, get_streak,
     get_today_quicklogs, save_career_progress, load_career_progress,
     create_incident, update_incident, get_today_incidents,
-    get_missing_pillars_today, get_incident_by_id
+    get_missing_pillars_today, get_incident_by_id, get_conn
 )
 import sqlite3
 from datetime import datetime
@@ -361,6 +361,7 @@ def chat_incident():
         messages.append(turn)
 
     ai_response = call_groq(messages, max_tokens=300)
+    print("AI RESPONSE:", ai_response)
 
     # Check if AI returned the completion JSON
     try:
@@ -461,69 +462,15 @@ def checkin_v2():
         answer = data.get('answer', '').strip()
         remaining = data.get('remaining_pillars', [])
 
+        incident_id = None
         if answer and pillar:
-            # Start a proper incident conversation for this answer
             incident_id = create_incident(pillar, answer)
 
-            # Quick single-turn extraction for check-in context
-            # (user can do full conversation if they want more depth)
-            extraction_prompt = f"""
-The user answered about {pillar.upper()} during end-of-day check-in.
-Their response: "{answer}"
-
-Extract what you can and return the completion JSON immediately.
-If resistance is clear from the answer, score it. If not, use middle scores (3).
-Always return the JSON — this is a quick check-in, not a deep conversation.
-"""
-            messages = [
-                {'role': 'system', 'content': SHADOW_SYSTEM_PROMPT},
-                {'role': 'user', 'content': extraction_prompt}
-            ]
-            ai_response = call_groq(messages, max_tokens=300)
-
-            try:
-                json_start = ai_response.find('{')
-                json_end = ai_response.rfind('}') + 1
-                if json_start != -1:
-                    extracted = json.loads(ai_response[json_start:json_end])
-                    if extracted.get('complete'):
-                        update_incident(
-                            incident_id,
-                            extracted['situation'],
-                            extracted['options_available'],
-                            extracted['choice_made'],
-                            extracted['resistance_reason'],
-                            extracted['clarity_gap'],
-                            extracted['resistance_score'],
-                            json.dumps([{'role': 'user', 'content': answer}])
-                        )
-            except (json.JSONDecodeError, KeyError, ValueError):
-                pass  # Incident stays incomplete — not fatal
-
-        # Move to next missing pillar
-        if remaining:
-            next_pillar = remaining[0]
-            next_remaining = remaining[1:]
-
-            question = call_groq([
-                {'role': 'system', 'content': SHADOW_SYSTEM_PROMPT},
-                {'role': 'user', 'content': (
-                    f"Ask one sharp question about why the user didn't work on "
-                    f"{next_pillar.upper()} today. What was the resistance? Short and direct."
-                )}
-            ], max_tokens=100)
-
-            return jsonify({
-                'phase': 'gap_fill',
-                'missing_pillars': remaining,
-                'current_pillar': next_pillar,
-                'remaining_pillars': next_remaining,
-                'message': question
-            })
-
-        # All missing pillars answered — generate summary
-        today_incidents = get_today_incidents()
-        return _generate_day_summary(today_incidents)
+        return jsonify({
+            'phase': 'redirect',
+            'incident_id': incident_id,
+            'remaining_pillars': remaining
+        })
 
     return jsonify({'error': 'Invalid action'}), 400
 
