@@ -124,13 +124,12 @@ function toggleQuickLog() {
 
 async function saveQuickLog() {
     const note = document.getElementById('quicklog-text').value;
-    const pillar = document.getElementById('quicklog-pillar').value;
     if (!note.trim()) return;
 
     const response = await fetch('/start_incident', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ note, pillar })
+        body: JSON.stringify({ note, pillar: 'general' })
     });
 
     const data = await response.json();

@@ -60,7 +60,7 @@
 
 <!-- QUICK LOG PANEL -->
 <!-- QUICK LOG BUTTON -->
-<div class="quicklog-btn-container">
+ <div class="quicklog-btn-container">
     <button class="quicklog-trigger" onclick="toggleQuickLog()">
         + QUICK LOG
     </button>
@@ -69,25 +69,14 @@
     <div class="quicklog-inner">
         <p class="quicklog-title">LOG THIS MOMENT //</p>
         
-        <select id="quicklog-pillar">
-            <option value="awareness">A — AWARENESS</option>
-            <option value="strategy">S — STRATEGY</option>
-            <option value="cognition">C — COGNITION</option>
-            <option value="emotional">E — EMOTIONAL</option>
-            <option value="network">N — NETWORK</option>
-            <option value="development">D — DEVELOPMENT</option>
-        </select>
-
         <textarea id="quicklog-text" placeholder="What just happened? One line. Raw."></textarea>
 
-        <button class="quicklog-save" onclick="saveQuickLog()">SAVE LOG</button>
+        <button class="quicklog-save" onclick="saveQuickLog()">LOG IT</button>
         <button class="quicklog-close" onclick="toggleQuickLog()">CANCEL</button>
 
-        <!-- TODAY'S LOGS -->
         <div id="today-logs"></div>
     </div>
 </div>
-
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
