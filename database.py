@@ -56,7 +56,7 @@ def init_db():
         # is_complete     : 0 = conversation in progress, 1 = all 4 elements extracted
         c.execute('''
     CREATE TABLE IF NOT EXISTS incidents (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,,
+        id SERIAL PRIMARY KEY,
         date TEXT NOT NULL,
         time TEXT NOT NULL,
         pillar TEXT NOT NULL,
@@ -102,25 +102,25 @@ def init_db():
         ''')
 
         c.execute('''
-    CREATE TABLE IF NOT EXISTS incidents (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,,
-        date TEXT NOT NULL,
-        time TEXT NOT NULL,
-        pillar TEXT NOT NULL,
-        situation TEXT,
-        options_available TEXT,
-        choice_made TEXT,
-        resistance_reason TEXT,
-        clarity_gap INTEGER,
-        resistance_score INTEGER,
-        state_code INTEGER,
-        total_score INTEGER DEFAULT 0,
-        score_label TEXT,
-        pillars TEXT,
-        conversation TEXT,
-        is_complete INTEGER DEFAULT 0
-    )
-''')
+            CREATE TABLE IF NOT EXISTS incidents (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT NOT NULL,
+                time TEXT NOT NULL,
+                pillar TEXT NOT NULL,
+                situation TEXT,
+                options_available TEXT,
+                choice_made TEXT,
+                resistance_reason TEXT,
+                clarity_gap INTEGER,
+                resistance_score INTEGER,
+                state_code INTEGER,
+                total_score INTEGER DEFAULT 0,
+                score_label TEXT,
+                pillars TEXT,
+                conversation TEXT,
+                is_complete INTEGER DEFAULT 0
+            )
+        ''')
 
     conn.commit()
     conn.close()
