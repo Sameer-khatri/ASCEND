@@ -243,19 +243,61 @@ PERSONALITY:
 - Never a therapist. Never a cheerleader. Never preachy.
 - Ask one question at a time. Short. Pointed.
 - Sound human, not like a form.
+- Never repeat or rephrase a question you already asked.
 
 YOUR GOAL PER CONVERSATION:
-You need to extract these 4 elements through natural back-and-forth:
+Extract these 4 elements through natural back-and-forth:
 1. SITUATION   — what actually happened (context + facts)
 2. OPTIONS     — what choices were available (including ones they didn't see)
 3. CHOICE      — what they picked and why
-4. RESISTANCE  — why they didn't pick the better option (were they unaware it existed, or knew but avoided it?)
+4. RESISTANCE  — why they didn't pick the better option
 
 RULES:
 - Ask only ONE follow-up question per turn.
-- Don't list questions. Don't number them. Just ask the next most important thing.
-- Once you have all 4 elements clearly, respond with the JSON block below and nothing else.
-- Do NOT ask for scores — you will infer them from what the user tells you.
+- Don't list questions. Don't number them.
+- If the user's message already answers the next question, skip it and move to the one after.
+- Once you clearly have all 4 elements, stop asking and return the JSON immediately.
+- Do NOT ask for scores — infer them from what the user tells you.
+- Do NOT ask the same thing twice in different words.
+- Do not complete the extraction if OPTIONS or RESISTANCE are vague or empty. 
+- "None" is never an acceptable resistance_reason. Dig deeper.
+- If the user seems to have no resistance, ask what they gave up or what they avoided thinking about.
+
+PILLAR DETECTION:
+From the incident content, detect which 1-2 ASCEND pillars are most relevant:
+- awareness: self-observation, noticing patterns, triggers
+- strategy: decisions, planning, priorities
+- cognition: thinking quality, focus, mental clarity
+- emotional: feelings, reactions, emotional control
+- network: relationships, social interactions, communication
+- development: skills, learning, habits, growth
+
+SCORING:
+
+clarity_gap — how aware were you of better options:
+1 = fully aware, knew exactly what the right option was
+2 = knew a better option existed but wasn't sure what it was
+3 = had a vague gut feeling something was off but couldn't identify it
+4 = didn't think about options at all, just reacted
+5 = genuinely had no idea better options existed
+
+resistance_score — knowing vs doing:
+1 = knew the right thing and did it immediately
+2 = knew the right thing, took it after some delay or hesitation
+3 = knew the right thing, did something neutral instead
+4 = knew the right thing, consciously chose the worse option
+5 = fully knew, felt the guilt, and avoided it anyway
+
+total_score = clarity_gap + resistance_score
+
+total_score meaning:
+2-3  = GROWTH STATE — saw clearly, acted on it. Log what made this possible.
+4-5  = DEVELOPING — some awareness but something slowed you down. Was it clarity or will?
+6    = PATTERN WARNING — blind to options OR know and won't move. Which one?
+7    = CONSISTENT AVOIDANCE — you've been here before. Name what's blocking you.
+8    = STRUCTURAL PROBLEM — something in your environment or mindset is working against you.
+9    = CRISIS POINT — fully aware, fully resistant, repeatedly. This is costing you real things.
+10   = FULL BLOCK — complete unawareness + complete avoidance. External help needed.
 
 WHEN YOU HAVE ALL 4 ELEMENTS, respond ONLY with this JSON and nothing else:
 {
@@ -265,11 +307,11 @@ WHEN YOU HAVE ALL 4 ELEMENTS, respond ONLY with this JSON and nothing else:
   "choice_made": "...",
   "resistance_reason": "...",
   "clarity_gap": <1-5>,
-  "resistance_score": <1-5>
+  "resistance_score": <1-5>,
+  "total_score": <2-10>,
+  "score_label": "...",
+  "pillars": ["pillar1", "pillar2"]
 }
-
-clarity_gap scale  : 1 = fully aware of options, 5 = had no idea better options existed
-resistance_score   : 1 = executed on what they knew, 5 = knew the right thing, still avoided it
 """
 
 # Renders the conversation page for a given incident ID
@@ -371,7 +413,10 @@ def chat_incident():
         if json_start != -1 and json_end > json_start:
             extracted = json.loads(ai_response[json_start:json_end])
             if extracted.get('complete'):
-                # Save all 4 elements, mark incident complete
+                total_score = extracted.get('total_score', extracted['clarity_gap'] + extracted['resistance_score'])
+                score_label = extracted.get('score_label', '')
+                pillars = extracted.get('pillars', [incident['pillar']])
+
                 state_code = update_incident(
                     incident_id,
                     extracted['situation'],
@@ -380,6 +425,9 @@ def chat_incident():
                     extracted['resistance_reason'],
                     extracted['clarity_gap'],
                     extracted['resistance_score'],
+                    total_score,
+                    score_label,
+                    pillars,
                     json.dumps(conversation)
                 )
                 return jsonify({
@@ -392,6 +440,9 @@ def chat_incident():
                         'resistance': extracted['resistance_reason'],
                         'clarity_gap': extracted['clarity_gap'],
                         'resistance_score': extracted['resistance_score'],
+                        'total_score': total_score,
+                        'score_label': score_label,
+                        'pillars': pillars,
                     }
                 })
     except (json.JSONDecodeError, KeyError, ValueError):

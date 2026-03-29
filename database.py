@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+import json
 
 # This function connects ASCEND with database
 def get_conn():
@@ -54,22 +55,25 @@ def init_db():
         # conversation    : full JSON of AI <-> user dialogue
         # is_complete     : 0 = conversation in progress, 1 = all 4 elements extracted
         c.execute('''
-            CREATE TABLE IF NOT EXISTS incidents (
-                id SERIAL PRIMARY KEY,
-                date TEXT NOT NULL,
-                time TEXT NOT NULL,
-                pillar TEXT NOT NULL,
-                situation TEXT,
-                options_available TEXT,
-                choice_made TEXT,
-                resistance_reason TEXT,
-                clarity_gap INTEGER,
-                resistance_score INTEGER,
-                state_code INTEGER,
-                conversation TEXT,
-                is_complete INTEGER DEFAULT 0
-            )
-        ''')
+    CREATE TABLE IF NOT EXISTS incidents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,,
+        date TEXT NOT NULL,
+        time TEXT NOT NULL,
+        pillar TEXT NOT NULL,
+        situation TEXT,
+        options_available TEXT,
+        choice_made TEXT,
+        resistance_reason TEXT,
+        clarity_gap INTEGER,
+        resistance_score INTEGER,
+        state_code INTEGER,
+        total_score INTEGER DEFAULT 0,
+        score_label TEXT,
+        pillars TEXT,
+        conversation TEXT,
+        is_complete INTEGER DEFAULT 0
+    )
+''')
 
     else:
         # SQLite syntax
@@ -98,22 +102,25 @@ def init_db():
         ''')
 
         c.execute('''
-            CREATE TABLE IF NOT EXISTS incidents (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                date TEXT NOT NULL,
-                time TEXT NOT NULL,
-                pillar TEXT NOT NULL,
-                situation TEXT,
-                options_available TEXT,
-                choice_made TEXT,
-                resistance_reason TEXT,
-                clarity_gap INTEGER,
-                resistance_score INTEGER,
-                state_code INTEGER,
-                conversation TEXT,
-                is_complete INTEGER DEFAULT 0
-            )
-        ''')
+    CREATE TABLE IF NOT EXISTS incidents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,,
+        date TEXT NOT NULL,
+        time TEXT NOT NULL,
+        pillar TEXT NOT NULL,
+        situation TEXT,
+        options_available TEXT,
+        choice_made TEXT,
+        resistance_reason TEXT,
+        clarity_gap INTEGER,
+        resistance_score INTEGER,
+        state_code INTEGER,
+        total_score INTEGER DEFAULT 0,
+        score_label TEXT,
+        pillars TEXT,
+        conversation TEXT,
+        is_complete INTEGER DEFAULT 0
+    )
+''')
 
     conn.commit()
     conn.close()
@@ -291,7 +298,8 @@ def create_incident(pillar, initial_note):
 # Updates an incident with all 4 extracted elements after AI conversation ends
 # Auto-calculates state_code from clarity_gap and resistance_score
 def update_incident(incident_id, situation, options_available, choice_made,
-                    resistance_reason, clarity_gap, resistance_score, conversation):
+                    resistance_reason, clarity_gap, resistance_score, 
+                    total_score, score_label, pillars, conversation):
 
     high_clarity    = clarity_gap <= 2        # low gap = high awareness
     high_resistance = resistance_score >= 3   # high score = high resistance
@@ -311,22 +319,26 @@ def update_incident(incident_id, situation, options_available, choice_made,
     p = '%s' if database_url else '?'
 
     c.execute(f'''
-        UPDATE incidents SET
-            situation          = {p},
-            options_available  = {p},
-            choice_made        = {p},
-            resistance_reason  = {p},
-            clarity_gap        = {p},
-            resistance_score   = {p},
-            state_code         = {p},
-            conversation       = {p},
-            is_complete        = 1
-        WHERE id = {p}
-    ''', (
-        situation, options_available, choice_made,
-        resistance_reason, clarity_gap, resistance_score,
-        state_code, conversation, incident_id
-    ))
+    UPDATE incidents SET
+        situation         = {p},
+        options_available = {p},
+        choice_made       = {p},
+        resistance_reason = {p},
+        clarity_gap       = {p},
+        resistance_score  = {p},
+        state_code        = {p},
+        total_score       = {p},
+        score_label       = {p},
+        pillars           = {p},
+        conversation      = {p},
+        is_complete       = 1
+    WHERE id = {p}
+''', (
+    situation, options_available, choice_made,
+    resistance_reason, clarity_gap, resistance_score,
+    state_code, total_score, score_label,
+    json.dumps(pillars), conversation, incident_id
+))
     conn.commit()
     conn.close()
     return state_code
@@ -383,9 +395,10 @@ def get_incident_by_id(incident_id):
     if not row:
         return None
     return {
-        'id': row[0], 'date': row[1], 'time': row[2], 'pillar': row[3],
-        'situation': row[4], 'options_available': row[5], 'choice_made': row[6],
-        'resistance_reason': row[7], 'clarity_gap': row[8],
-        'resistance_score': row[9], 'state_code': row[10],
-        'conversation': row[11], 'is_complete': row[12]
-    }
+    'id': row[0], 'date': row[1], 'time': row[2], 'pillar': row[3],
+    'situation': row[4], 'options_available': row[5], 'choice_made': row[6],
+    'resistance_reason': row[7], 'clarity_gap': row[8],
+    'resistance_score': row[9], 'state_code': row[10],
+    'total_score': row[11], 'score_label': row[12], 'pillars': row[13],
+    'conversation': row[14], 'is_complete': row[15]
+}

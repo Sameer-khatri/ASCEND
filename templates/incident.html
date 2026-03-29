@@ -428,8 +428,11 @@
         card.innerHTML = `
             <div class="state-header" style="border-left-color: ${meta.color};">
                 <span class="state-title" style="color: ${meta.color};">${meta.label}</span>
-                <span class="state-score">RESISTANCE SCORE: ${resistanceScore}</span>
+                <span class="state-score">RESISTANCE: ${resistanceScore} | CLARITY: ${clarityGap} | TOTAL: ${String(summaryObj.total_score || '—')}</span>
             </div>
+            <div class="score-label" style="color: #c8ff00; font-family: 'Space Mono'; font-size: 0.75rem; margin-bottom: 1rem;">
+    ${escapeHtml(summaryObj.score_label || '')}
+</div>
             <div class="summary-grid">
                 <div class="summary-item">
                     <div class="summary-label">SITUATION</div>
@@ -451,6 +454,10 @@
                     <div class="summary-label">CLARITY GAP</div>
                     <div class="summary-text">${escapeHtml(clarityGap)}</div>
                 </div>
+                <div class="summary-item">
+    <div class="summary-label">PILLARS</div>
+    <div class="summary-text">${Array.isArray(summaryObj.pillars) ? summaryObj.pillars.join(', ').toUpperCase() : String(summaryObj.pillars || '—').toUpperCase()}</div>
+</div>
             </div>
             <hr />
             <div style="font-size:0.75rem; font-family: 'Space Mono', monospace; color: #c8ff00;">✦ session finalized · insights recorded</div>
