@@ -414,7 +414,6 @@
         
         // build summary from response
         const situation = summaryObj.situation || '—';
-        console.log('SUMMARY OBJ:', JSON.stringify(summaryObj));
         const options = typeof summaryObj.options === 'string' ? [summaryObj.options] : (Array.isArray(summaryObj.options) ? summaryObj.options : []);
         const choice = summaryObj.choice || '—';
         const resistance = summaryObj.resistance || '—';

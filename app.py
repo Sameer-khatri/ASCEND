@@ -402,7 +402,6 @@ def chat_incident():
         messages.append(turn)
 
     ai_response = call_groq(messages, max_tokens=300)
-    print("AI RESPONSE:", ai_response)
 
     # Check if AI returned the completion JSON
     try:

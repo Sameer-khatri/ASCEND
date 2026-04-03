@@ -156,7 +156,7 @@ def get_last_checkin():
 def get_streak():
     conn = get_conn()
     c = conn.cursor()
-    c.execute('SELECT DISTINCT date FROM checkins ORDER BY date DESC')
+    c.execute('SELECT DISTINCT date FROM incidents WHERE is_complete = 1 ORDER BY date DESC')
     dates = [row[0] for row in c.fetchall()]
     conn.close()
 
@@ -172,7 +172,6 @@ def get_streak():
         else:
             break
     return streak
-
 # This function saves quick logs to quicklogs table
 def save_quicklog(pillar, note):
     conn = get_conn()
