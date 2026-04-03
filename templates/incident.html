@@ -609,6 +609,13 @@ function escapeHtml(str) {
             // Optionally add default starter? But backend will respond to first message. Keep empty.
             conversationHistory = [];
         }
+        // Check for first message from Quick Log
+        const firstMessage = sessionStorage.getItem('first_message');
+        if (firstMessage && conversationHistory.length === 0) {
+            sessionStorage.removeItem('first_message');
+            addMessageToUI('ai', firstMessage);
+        }
+
         
         // if the incident is already completed, we might need to show completion card based on backend data?
         // Flask route indicates is_complete flag. but we need to retrieve summary? The backend might not send summary on page load.

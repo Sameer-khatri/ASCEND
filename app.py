@@ -361,7 +361,6 @@ def start_incident():
               (json.dumps(conversation), incident_id))
     conn.commit()
     conn.close()
-
     return jsonify({
         'incident_id': incident_id,
         'message': first_question

@@ -134,6 +134,8 @@ async function saveQuickLog() {
 
     const data = await response.json();
     if (data.incident_id) {
+        // Store first message so incident page can display it
+        sessionStorage.setItem('first_message', data.message);
         window.location.href = '/incident/' + data.incident_id;
     }
 }
