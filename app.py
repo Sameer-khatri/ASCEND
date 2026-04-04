@@ -558,7 +558,86 @@ No motivation. No padding. Be direct.
         'message': summary,
         'incidents': incidents
     })
+@app.route('/quick_analyze', methods=['POST'])
+def quick_analyze():
+    data = request.get_json()
+    situation = data.get('situation', '').strip()
+    options = data.get('options', '').strip()
+    choice = data.get('choice', '').strip()
+    resistance = data.get('resistance', '').strip()
 
+    if not situation:
+        return jsonify({'error': 'No situation provided'}), 400
+
+    # Ask SHADOW to score and detect pillars
+    prompt = f"""
+You are SHADOW. A user has logged this incident:
+
+SITUATION: {situation}
+OPTIONS AVAILABLE: {options}
+CHOICE MADE: {choice}
+RESISTANCE/WHY NOT BETTER OPTION: {resistance}
+
+CRITICAL: pillars array MUST contain ONLY values from this exact list: ["awareness", "strategy", "cognition", "emotional", "network", "development"]. No other strings allowed. Pick 1-2 most relevant.
+- awareness: self-observation, noticing patterns, emotional triggers, recognizing your own behavior
+- strategy: decisions, planning, priorities, choosing what to work on
+- cognition: thinking quality, focus, mental clarity, learning
+- emotional: feelings, reactions, stress, emotional control
+- network: relationships, social interactions, communication
+- development: skills, habits, growth, building things
+No other values allowed.
+
+Based on this, respond ONLY with this JSON and nothing else:
+
+{{
+  "complete": true,
+  "situation": "{situation}",
+  "options_available": "{options}",
+  "choice_made": "{choice}",
+  "resistance_reason": "{resistance}",
+  "clarity_gap": <1-5>,
+  "resistance_score": <1-5>,
+  "total_score": <2-10>,
+  "score_label": "...",
+  "pillars": ["pillar1", "pillar2"]
+}}
+"""
+
+    response = call_groq([{'role': 'user', 'content': prompt}], max_tokens=300)
+
+    try:
+        json_start = response.find('{')
+        json_end = response.rfind('}') + 1
+        extracted = json.loads(response[json_start:json_end])
+
+        total_score = extracted.get('total_score', extracted['clarity_gap'] + extracted['resistance_score'])
+        score_label = extracted.get('score_label', '')
+        pillars = extracted.get('pillars', ['general'])
+
+        incident_id = create_incident('general', situation)
+        state_code = update_incident(
+            incident_id, situation, options, choice, resistance,
+            extracted['clarity_gap'], extracted['resistance_score'],
+            total_score, score_label, pillars, '[]'
+        )
+
+        return jsonify({
+            'complete': True,
+            'state_code': state_code,
+            'summary': {
+                'situation': situation,
+                'options': options,
+                'choice': choice,
+                'resistance': resistance,
+                'clarity_gap': extracted['clarity_gap'],
+                'resistance_score': extracted['resistance_score'],
+                'total_score': total_score,
+                'score_label': score_label,
+                'pillars': pillars,
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

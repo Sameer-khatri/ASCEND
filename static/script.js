@@ -123,20 +123,36 @@ function toggleQuickLog() {
 }
 
 async function saveQuickLog() {
-    const note = document.getElementById('quicklog-text').value;
-    if (!note.trim()) return;
+    const situation = document.getElementById('ql-situation').value.trim();
+    const options = document.getElementById('ql-options').value.trim();
+    const choice = document.getElementById('ql-choice').value.trim();
+    const resistance = document.getElementById('ql-resistance').value.trim();
 
-    const response = await fetch('/start_incident', {
+    if (!situation) return;
+
+    const resultDiv = document.getElementById('ql-result');
+    resultDiv.innerHTML = '<p style="color:#c8ff00; font-family: Space Mono; font-size:0.8rem;">SHADOW is analyzing...</p>';
+
+    const response = await fetch('/quick_analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ note, pillar: 'general' })
+        body: JSON.stringify({ situation, options, choice, resistance })
     });
 
     const data = await response.json();
-    if (data.incident_id) {
-        // Store first message so incident page can display it
-        sessionStorage.setItem('first_message', data.message);
-        window.location.href = '/incident/' + data.incident_id;
+
+    if (data.complete) {
+        const s = data.summary;
+        resultDiv.innerHTML = `
+            <div style="margin-top:1rem; border-top: 2px solid #c8ff00; padding-top:1rem; font-family: Space Mono; font-size:0.75rem;">
+                <div style="color:#c8ff00; font-size:0.9rem; margin-bottom:0.5rem;">STATE ${data.state_code} · TOTAL: ${s.total_score}/10</div>
+                <div style="color:#888; margin-bottom:0.3rem;">${s.score_label}</div>
+                <div style="color:#aaa;">PILLARS: ${Array.isArray(s.pillars) ? s.pillars.join(', ').toUpperCase() : s.pillars}</div>
+                <div style="color:#aaa; margin-top:0.5rem;">CLARITY: ${s.clarity_gap} | RESISTANCE: ${s.resistance_score}</div>
+            </div>
+        `;
+    } else {
+        resultDiv.innerHTML = '<p style="color:red;">Error analyzing. Try again.</p>';
     }
 }
 

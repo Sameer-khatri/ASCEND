@@ -65,16 +65,29 @@
         + QUICK LOG
     </button>
 </div>
+<div class="quicklog-btn-container">
+    <button class="quicklog-trigger" onclick="toggleQuickLog()">
+        + QUICK LOG
+    </button>
+</div>
+<div class="quicklog-btn-container">
+    <button class="quicklog-trigger" onclick="toggleQuickLog()">
+        + QUICK LOG
+    </button>
+</div>
 <div class="quicklog-panel" id="quicklog-panel" style="display:none">
     <div class="quicklog-inner">
         <p class="quicklog-title">LOG THIS MOMENT //</p>
         
-        <textarea id="quicklog-text" placeholder="What just happened? One line. Raw."></textarea>
+        <textarea id="ql-situation" placeholder="What happened?"></textarea>
+        <textarea id="ql-options" placeholder="What were your options?"></textarea>
+        <textarea id="ql-choice" placeholder="What did you choose?"></textarea>
+        <textarea id="ql-resistance" placeholder="Why didn't you pick the better option?"></textarea>
 
-        <button class="quicklog-save" onclick="saveQuickLog()">LOG IT</button>
+        <button class="quicklog-save" onclick="saveQuickLog()">ANALYZE →</button>
         <button class="quicklog-close" onclick="toggleQuickLog()">CANCEL</button>
 
-        <div id="today-logs"></div>
+        <div id="ql-result"></div>
     </div>
 </div>
 <script src="{{ url_for('static', filename='script.js') }}"></script>
