@@ -352,32 +352,43 @@ def get_today_incidents():
     p = '%s' if database_url else '?'
 
     c.execute(f'''
-        SELECT id, time, pillar, situation, options_available, choice_made,
-               resistance_reason, clarity_gap, resistance_score, state_code
-        FROM incidents
-        WHERE date = {p} AND is_complete = 1
-        ORDER BY id ASC
-    ''', (today,))
+    SELECT id, time, pillar, situation, options_available, choice_made,
+           resistance_reason, clarity_gap, resistance_score, state_code, pillars
+    FROM incidents
+    WHERE date = {p} AND is_complete = 1
+    ORDER BY id ASC
+''', (today,))
     rows = c.fetchall()
     conn.close()
     return [
-        {
-            'id': r[0], 'time': r[1], 'pillar': r[2],
-            'situation': r[3], 'options_available': r[4],
-            'choice_made': r[5], 'resistance_reason': r[6],
-            'clarity_gap': r[7], 'resistance_score': r[8],
-            'state_code': r[9]
-        }
-        for r in rows
-    ]
+    {
+        'id': r[0], 'time': r[1], 'pillar': r[2],
+        'situation': r[3], 'options_available': r[4],
+        'choice_made': r[5], 'resistance_reason': r[6],
+        'clarity_gap': r[7], 'resistance_score': r[8],
+        'state_code': r[9], 'pillars': r[10]
+    }
+    for r in rows
+]
 
 # Returns which of the 6 pillars have NO complete incident today
 # Used by Check-in AI to ask targeted resistance questions for missing pillars
 def get_missing_pillars_today():
     ALL_PILLARS = {'awareness', 'strategy', 'cognition', 'emotional', 'network', 'development'}
-    incidents   = get_today_incidents()
-    covered     = {i['pillar'].lower() for i in incidents}
-    missing     = ALL_PILLARS - covered
+    incidents = get_today_incidents()
+    covered = set()
+    for i in incidents:
+        if i.get('pillars'):
+            try:
+                detected = json.loads(i['pillars']) if isinstance(i['pillars'], str) else i['pillars']
+                if isinstance(detected, list):
+                    for p in detected:
+                        covered.add(p.lower())
+            except:
+                covered.add(i['pillar'].lower())
+        else:
+            covered.add(i['pillar'].lower())
+    missing = ALL_PILLARS - covered
     return list(missing)
 
 # Fetches a single incident by ID
