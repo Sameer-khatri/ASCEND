@@ -155,6 +155,14 @@ async function saveQuickLog() {
         resultDiv.innerHTML = '<p style="color:red;">Error analyzing. Try again.</p>';
     }
 }
+async function loadStreak() {
+    const response = await fetch('/get_streak');
+    const data = await response.json();
+    const streakEl = document.getElementById('streak');
+    if (streakEl) streakEl.innerText = data.streak;
+}
+
+loadStreak();
 
 async function loadTodayLogs() {
     const response = await fetch('/getlogs');

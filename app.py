@@ -638,7 +638,9 @@ Based on this, respond ONLY with this JSON and nothing else:
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+@app.route('/get_streak')
+def get_streak_route():
+    return jsonify({'streak': get_streak()})
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
